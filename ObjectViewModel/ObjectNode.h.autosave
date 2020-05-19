@@ -1,0 +1,130 @@
+#ifndef NODE_H
+#define NODE_H
+
+#include <QGraphicsWidget>
+#include <QGraphicsProxyWidget>
+#include <QGraphicsSimpleTextItem>
+#include <QGraphicsPolygonItem>
+#include <QPainterPath>
+#include <QPen>
+#include <QBrush>
+#include <QFont>
+
+#include <QMetaMethod>
+
+#include <QMap>
+
+class ObjectModel;
+class ObjectGraph;
+class SlotConnectionPoint;
+class SignalConnectionPoint;
+class NodeSizeGripper;
+class Edge;
+
+class ObjectNode : public QGraphicsWidget
+{
+
+  Q_OBJECT
+
+  Q_PROPERTY(QString caption READ caption WRITE setCaption)
+  Q_PROPERTY(QString status READ status WRITE setStatus)
+  Q_PROPERTY(QPen pen READ pen WRITE setPen)
+  Q_PROPERTY(QBrush brush READ brush WRITE setBrush)
+
+public:
+
+  ObjectNode(QObject* object, QGraphicsItem* parent = nullptr);
+
+  virtual ~ObjectNode();
+
+  ObjectGraph* graph() const;
+  
+  ObjectModel* model() const;
+  
+  QObject* object() const { return _object; }
+
+  int objectId() const { return model()->getObjectId(object()); }
+
+  QPen pen() const { return _pen; }
+  void setPen(const QPen& pen);
+
+  QBrush brush() const { return _brush; }
+  void setBrush(const QBrush& brush);
+
+  QString caption() const { return _caption->text(); }
+  void setCaption(const QString& caption);
+
+  QString status() const { return _status->text(); }
+  void setStatus(const QString& status);
+
+  QPainterPath shape() const override;
+  QRectF boundingRect() const override;
+
+  void bindToSignalConnectionPoint(int signalIndex, Edge* edge);
+  void bindToSlotConnectionPoint(int slotIndex, Edge* edge);
+
+private slots:
+
+  void onObjectNameChanged(const QString& name);
+  void updateNodeLayout();
+
+protected:
+
+  void buildMethodMaps();
+  
+  QSizeF maxMethodCaptionSize() const;
+
+  void buildNode();
+
+  bool resizable() const;
+  
+  void updateBoundingRect();
+
+  void updateShape();
+
+  QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint) const override;
+
+  void closeEvent(QCloseEvent *event) override;
+
+  void resizeEvent(QGraphicsSceneResizeEvent *event) override;
+
+  QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+
+  void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+  void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+
+  void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
+  void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
+
+  void dragEnterEvent(QGraphicsSceneDragDropEvent *event) override;
+  void dragLeaveEvent(QGraphicsSceneDragDropEvent *event) override;
+  void dragMoveEvent(QGraphicsSceneDragDropEvent *event) override;
+  void dropEvent(QGraphicsSceneDragDropEvent *event) override;
+
+private:
+
+  QObject* _object;
+  QGraphicsProxyWidget* _proxy;
+
+  QGraphicsPathItem* _rect;
+  QGraphicsSimpleTextItem* _caption;
+  QGraphicsSimpleTextItem* _status;
+  NodeSizeGripper* _sizeGripper;
+
+  QMap<int,SlotConnectionPoint*> _slotConnectionPoints;
+  QMap<int,SignalConnectionPoint*> _signalConnectionPoints;
+
+  QMap<int,QGraphicsSimpleTextItem*> _slotTextItems;
+  QMap<int,QGraphicsSimpleTextItem*> _signalTextItems;
+
+  QRectF _geometry;
+  QRectF _boundingRect;
+  QPainterPath _shape;
+
+  QPen _pen;
+  QBrush _brush;
+
+};
+
+#endif // NODE_H

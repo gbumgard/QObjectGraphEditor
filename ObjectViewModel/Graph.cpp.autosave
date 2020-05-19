@@ -1,0 +1,787 @@
+#include "GraphicsItemMimeData.h"
+
+#include <QApplication>
+#include <QGraphicsSceneEvent>
+#include <QGraphicsItem>
+#include <QWidget>
+#include <QMetaMethod>
+#include <QDataStream>
+#include <QDrag>
+#include <QList>
+#include <QUndoCommand>
+
+#include "ObjectFactory.h"
+#include "ObjectModel.h"
+#include "Graph.h"
+#include "Node.h"
+#include "SlotMimeData.h"
+#include "SignalMimeData.h"
+#include "Edge.h"
+
+#include <QDebug>
+
+
+/**
+ * \internal
+ * @brief The AddObjectCommand class
+ */
+class AddObjectCommand : public QUndoCommand
+{
+
+public:
+
+  /**
+   * @brief AddObjectCommand
+   * @param graph
+   * @param className
+   * @param position
+   * @param parent
+   */
+  AddObjectCommand(Graph* graph,
+                   const QString& className,
+                   const QPointF& position,
+                   QUndoCommand* parent = nullptr)
+    : QUndoCommand(parent)
+    , _graph(graph)
+    , _objectId(-1)
+    , _className(className)
+    , _position(position)
+  {
+  }
+
+  /**
+   * @brief redo
+   */
+  void redo() override {
+    qDebug() << Q_FUNC_INFO << _objectId << _className << _position;
+    _graph->addObjectNode(_objectId, _className, _position);
+  }
+
+  /**
+   * @brief undo
+   */
+  void undo() override {
+    qDebug() << Q_FUNC_INFO << _objectId << _className << _position;
+    _graph->removeObjectNode(_objectId);
+  }
+
+private:
+
+  Graph* _graph;
+  int _objectId;
+  QString _className;
+  QPointF _position;
+
+};
+
+/**
+ * \internal
+ * @brief The RemoveObjectCommand class
+ */
+class RemoveObjectCommand : public QUndoCommand
+{
+
+public:
+
+  /**
+   * @brief RemoveObjectCommand
+   * @param graph
+   * @param objectId
+   * @param parent
+   */
+  RemoveObjectCommand(Graph* graph,
+                      int objectId,
+                      QUndoCommand* parent = nullptr)
+    : QUndoCommand(parent)
+    , _graph(graph)
+    , _objectId(objectId)
+    , _className()
+    , _position()
+  {
+  }
+
+  /**
+   * @brief redo
+   */
+  void redo() override {
+    qDebug() << Q_FUNC_INFO << _objectId << _className << _position;
+    Node* node = _graph->getObjectNode(_objectId);
+    _className = node->object()->metaObject()->className();
+    _position = node->pos();
+    _graph->removeObjectNode(_objectId);
+  }
+
+  /**
+   * @brief undo
+   */
+  void undo() override {
+    qDebug() << Q_FUNC_INFO << _objectId << _className << _position;
+    Node* node = _graph->addObjectNode(_objectId, _className);
+    node->setPos(_position);
+  }
+
+private:
+
+  Graph* _graph;
+  int _objectId;
+  QString _className;
+  QPointF _position;
+
+};
+
+/**
+ * \internal
+ * @brief The AddConnectionCommand class
+ */
+class AddConnectionCommand : public QUndoCommand
+{
+
+public:
+
+  /**
+   * @brief AddConnectionCommand
+   * @param graph
+   * @param senderId
+   * @param signalIndex
+   * @param receiverId
+   * @param slotIndex
+   * @param parent
+   */
+  AddConnectionCommand(Graph* graph,
+                       int senderId,
+                       int signalIndex,
+                       int receiverId,
+                       int slotIndex,
+                       QUndoCommand* parent = nullptr)
+    : QUndoCommand(parent)
+    , _graph(graph)
+    , _connectionId(-1)
+    , _senderId(senderId)
+    , _signalIndex(signalIndex)
+    , _receiverId(receiverId)
+    , _slotIndex(slotIndex)
+  {
+  }
+
+  /**
+   * @brief redo
+   */
+  void redo() override {
+    qDebug() << Q_FUNC_INFO << _connectionId << _senderId << _signalIndex << _receiverId << _slotIndex;
+    Edge* cp = _graph->addConnectionPath(_connectionId,_senderId,_signalIndex,_receiverId,_slotIndex);
+    _connectionId = cp->connectionId();
+  }
+
+  /**
+   * @brief undo
+   */
+  void undo() override {
+    qDebug() << Q_FUNC_INFO << _connectionId << _senderId << _signalIndex << _receiverId << _slotIndex;
+    _graph->removeConnectionPath(_connectionId);
+  }
+
+private:
+
+  Graph* _graph;
+  int _connectionId;
+  int _senderId;
+  int _signalIndex;
+  int _receiverId;
+  int _slotIndex;
+
+};
+
+/**
+ * \internal
+ * @brief The RemoveConnectionCommand class
+ */
+class RemoveConnectionCommand : public QUndoCommand
+{
+
+public:
+
+  /**
+   * @brief RemoveConnectionCommand
+   * @param graph
+   * @param connectionId
+   * @param parent
+   */
+  RemoveConnectionCommand(Graph* graph,
+                          int connectionId,
+                          QUndoCommand* parent = nullptr)
+    : QUndoCommand(parent)
+    , _graph(graph)
+    , _connectionId(connectionId)
+    , _senderId(-1)
+    , _signalIndex(-1)
+    , _receiverId(-1)
+    , _slotIndex(-1)
+  {
+  }
+
+  /**
+   * @brief redo
+   */
+  void redo() override {
+    qDebug() << Q_FUNC_INFO << _connectionId << _senderId << _signalIndex << _receiverId << _slotIndex;
+    ObjectModel::Connection connection = _graph->objectModel()->getConnection(_connectionId);
+    _senderId = connection.senderId;
+    _signalIndex = connection.signalIndex;
+    _receiverId = connection.receiverId;
+    _slotIndex = connection.slotIndex;
+    _graph->removeConnectionPath(_connectionId);
+  }
+
+  /**
+   * @brief undo
+   */
+  void undo() override {
+    qDebug() << Q_FUNC_INFO << _connectionId << _senderId << _signalIndex << _receiverId << _slotIndex;
+    _graph->addConnectionPath(_connectionId,_senderId,_signalIndex,_receiverId,_slotIndex);
+  }
+
+private:
+
+  Graph* _graph;
+  int _connectionId;
+  int _senderId;
+  int _signalIndex;
+  int _receiverId;
+  int _slotIndex;
+
+};
+
+
+/**
+ * \internal
+ * @brief The SetObjectNodeGeometryCommand class
+ */
+class SetObjectNodeGeometryCommand : public QUndoCommand
+{
+
+public:
+
+  /**
+   * @brief SetObjectNodeGeometryCommand
+   * @param graph
+   * @param objectId
+   * @param geometry
+   * @param parent
+   */
+  SetObjectNodeGeometryCommand(Graph* graph,
+                     int objectId,
+                     const QRectF& geometry,
+                     QUndoCommand* parent = nullptr)
+    : QUndoCommand(parent)
+    , _graph(graph)
+    , _objectId(objectId)
+    , _geometry(geometry)
+  {
+  }
+
+  /**
+   * @brief redo
+   */
+  void redo() override {
+    qDebug() << Q_FUNC_INFO << _objectId << _geometry;
+    Node* node = _graph->getObjectNode(_objectId);
+    QRectF geometry = node->geometry();
+    node->object()->setProperty("x-node-geometry",QVariant(geometry));
+    node->setGeometry(_geometry);
+    _geometry = geometry;
+  }
+
+  /**
+   * @brief undo
+   */
+  void undo() override {
+    qDebug() << Q_FUNC_INFO << _objectId << _geometry;
+    Node* node = _graph->getObjectNode(_objectId);
+    QRectF geometry = node->geometry();
+    node->object()->setProperty("x-node-geometry",QVariant(geometry));
+    node->setGeometry(_geometry);
+    _geometry = geometry;
+  }
+
+private:
+
+  Graph* _graph;
+  int _objectId;
+  QRectF _geometry;
+
+};
+
+/**
+ * \internal
+ * @brief The SetObjectNodeSizeCommand class
+ */
+class SetObjectNodeSizeCommand : public QUndoCommand
+{
+
+public:
+
+  /**
+   * @brief SetObjectNodeSizeCommand
+   * @param graph
+   * @param objectId
+   * @param geometry
+   * @param parent
+   */
+  SetObjectNodeSizeCommand(Graph* graph,
+                 int objectId,
+                 const QSizeF& size,
+                 QUndoCommand* parent = nullptr)
+    : QUndoCommand(parent)
+    , _graph(graph)
+    , _objectId(objectId)
+    , _size(size)
+  {
+  }
+
+  /**
+   * @brief redo
+   */
+  void redo() override {
+    qDebug() << Q_FUNC_INFO << _objectId << _size;
+    Node* node = _graph->getObjectNode(_objectId);
+    QSizeF size = node->size();
+    node->resize(_size);
+    QRectF geometry = node->geometry();
+    geometry.setSize(_size);
+    node->object()->setProperty("x-node-geometry",QVariant(geometry));
+    _size = size;
+  }
+
+  /**
+   * @brief undo
+   */
+  void undo() override {
+    qDebug() << Q_FUNC_INFO << _objectId << _size;
+    Node* node = _graph->getObjectNode(_objectId);
+    QSizeF size = node->size();
+    node->resize(_size);
+    QRectF geometry = node->geometry();
+    geometry.setSize(_size);
+    node->object()->setProperty("x-node-geometry",QVariant(geometry));
+    _size = size;
+  }
+
+private:
+
+  Graph* _graph;
+  int _objectId;
+  QSizeF _size;
+
+};
+
+
+/**
+ * @brief The SetObjectPropertyCommand class
+ */
+class SetObjectPropertyCommand : public QUndoCommand
+{
+
+public:
+
+  /**
+   * @brief SetPropertyValue
+   * @param graph
+   * @param objectId
+   * @param propertyName
+   * @param propertyValue
+   * @param parent
+   */
+  SetObjectPropertyCommand(Graph* graph,
+                     int objectId,
+                     const QString& propertyName,
+                     const QVariant& propertyValue,
+                     QUndoCommand* parent = nullptr)
+    : QUndoCommand(parent)
+    , _objectId(objectId)
+    , _propertyName(propertyName)
+    , _propertyValue(propertyValue)
+  {
+  }
+
+  /**
+   * @brief redo
+   */
+  void redo() override {
+    qDebug() << Q_FUNC_INFO << _objectId << _propertyName << _propertyValue;
+    QObject* object = _graph->getObjectNode(_objectId)->object();
+    const char* propertyName = _propertyName.toLatin1().constData();
+    QVariant propertyValue = object->property(propertyName);
+    object->setProperty(propertyName,_propertyValue);
+    _propertyValue = propertyValue;
+  }
+
+  /**
+   * @brief undo
+   */
+  void undo() override {
+    qDebug() << Q_FUNC_INFO << _objectId << _propertyName << _propertyValue;
+    QObject* object = _graph->getObjectNode(_objectId)->object();
+    const char* propertyName = _propertyName.toLatin1().constData();
+    QVariant propertyValue = object->property(propertyName);
+    object->setProperty(propertyName,_propertyValue);
+    _propertyValue = propertyValue;
+  }
+
+private:
+
+  Graph* _graph;
+  int _objectId;
+  QString _propertyName;
+  QVariant _propertyValue;
+
+};
+
+
+/**
+ * @brief ObjectGraph::ObjectGraph
+ * @param parent
+ */
+Graph::Graph(QObject* parent)
+  : QGraphicsScene(parent)
+{
+  connect(this,&QGraphicsScene::selectionChanged,[this]() {
+    qDebug() << "Selection changed:";
+    for (auto i : selectedItems()) {
+      //qDebug() << "item-rect" << i->boundingRect();
+    }
+  });
+
+  connect(&_model,&ObjectModel::objectAdded,this,&Graph::onObjectAdded);
+  connect(&_model,&ObjectModel::objectRemoved,this,&Graph::onObjectRemoved);
+  connect(&_model,&ObjectModel::connectionAdded,this,&Graph::onConnectionAdded);
+  connect(&_model,&ObjectModel::connectionRemoved,this,&Graph::onConnectionRemoved);
+}
+
+qreal Graph::topZValue() {
+  static qreal top = 0;
+  return top++;
+}
+
+bool Graph::undo() {
+  _commandStack.undo();
+  return _commandStack.index() != 0;
+}
+
+bool Graph::redo() {
+  _commandStack.redo();
+  return _commandStack.index() != _commandStack.count();
+}
+
+void Graph::addObject(const QString& className, const QPointF& position) {
+  _commandStack.push(new AddObjectCommand(this,className,position));
+}
+
+void Graph::removeObject(int objectId) {
+  _commandStack.push(new RemoveObjectCommand(this,objectId));
+}
+
+void Graph::addConnection(int senderId, int signalIndex, int receiverId, int slotIndex) {
+  _commandStack.push(new AddConnectionCommand(this,senderId,signalIndex,receiverId,slotIndex));
+}
+
+void Graph::removeConnection(int connectionId) {
+  _commandStack.push(new RemoveConnectionCommand(this,connectionId));
+}
+
+void Graph::setObjectProperty(int objectId, const QString& propertyName, const QVariant &propertyValue) {
+  _commandStack.push(new SetObjectPropertyCommand(this, objectId, propertyName, propertyValue));
+}
+
+void Graph::setObjectNodeSize(int objectId, const QSizeF& size) {
+  _commandStack.push(new SetObjectNodeSizeCommand(this, objectId, size));
+}
+
+void Graph::setObjectNodeGeometry(int objectId, const QRectF& geometry) {
+  _commandStack.push(new SetObjectNodeGeometryCommand(this, objectId, geometry));
+}
+
+Node* Graph::addObjectNode(int objectId, const QString &className, const QPointF& position) {
+  if (objectId == -1 || !_model.hasObject(objectId)) {
+    objectId = _model.addObject(objectId,className);
+  }
+  QObject* object = _model.object(objectId);
+  Node* objectNode = new Node(object);
+  objectNode->setPos(position);
+  addItem(objectNode);
+  _nodes.insert(objectId,objectNode);
+  return objectNode;
+}
+
+void Graph::removeObjectNode(int objectId) {
+  if (_model.hasObject(objectId)) {
+    _model.removeObject(objectId);
+  }
+  Node* objectNode = _nodes.take(objectId);
+  if (objectNode) {
+    removeItem(objectNode);
+    objectNode->close();
+  }
+}
+
+Node* Graph::getObjectNode(int objectId) const {
+  return _nodes[objectId];
+}
+
+Edge* Graph::addConnectionPath(int connectionId,
+                                               int senderId,
+                                               int signalIndex,
+                                               int receiverId,
+                                               int slotIndex) {
+  if (connectionId == -1 || !_model.hasConnection(connectionId)) {
+    connectionId = _model.addConnection(connectionId,senderId,signalIndex,receiverId,slotIndex);
+  }
+  Edge* connectionPath = new Edge(connectionId);
+  ObjectModel::Connection connection = _model.getConnection(connectionId);
+  Node* sender = _nodes[connection.senderId];
+  Node* receiver = _nodes[connection.receiverId];
+  sender->bindToSignalConnectionPoint(connection.signalIndex,connectionPath);
+  receiver->bindToSlotConnectionPoint(connection.slotIndex,connectionPath);
+  addItem(connectionPath);
+  _connectionPaths.insert(connectionId,connectionPath);
+  clearSelection();
+  return connectionPath;
+}
+
+void Graph::removeConnectionPath(int connectionId) {
+  if (_model.hasConnection(connectionId)) {
+    _model.removeConnection(connectionId);
+  }
+  Edge* connectionPath = _connectionPaths.take(connectionId);
+  if (connectionPath) {
+    removeItem(connectionPath);
+    connectionPath->deleteLater();
+  }
+}
+
+Edge* Graph::getConnectionPath(int connectionId) const {
+  return _connectionPaths[connectionId];
+}
+
+#if 0
+bool ObjectScene::open(const QString &dbFileName, const QString &dbDriverName) {
+  //qDebug() << Q_FUNC_INFO << dbFileName << dbDriverName;
+  //return _db.open(dbFileName,dbDriverName);
+  return false;
+}
+
+bool ObjectScene::loadPluginObjects(const QStringList& paths) {
+
+  ObjectFactory::loadObjectFactoryPlugins(paths);
+
+  if (_db.beginTransaction()) {
+    QList<QString> names(ObjectFactory::names());
+    for (auto name : names) {
+      _db.insertNodeClass(ObjectFactory::getObjectType(name));
+    }
+    _db.endTransaction();
+    return true;
+  }
+  return false;
+}
+#endif
+
+void Graph::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
+  event->ignore();
+  QGraphicsScene::mouseMoveEvent(event);
+}
+
+void Graph::mousePressEvent(QGraphicsSceneMouseEvent *event) {
+  QGraphicsScene::mousePressEvent(event);
+}
+
+void Graph::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
+  QGraphicsScene::mouseReleaseEvent(event);
+}
+
+void Graph::dragEnterEvent(QGraphicsSceneDragDropEvent *event) {
+  QGraphicsScene::dragEnterEvent(event);
+}
+
+void Graph::dragLeaveEvent(QGraphicsSceneDragDropEvent *event) {
+  QGraphicsScene::dragLeaveEvent(event);
+}
+
+void Graph::dropEvent(QGraphicsSceneDragDropEvent *event) {
+
+  QGraphicsScene::dropEvent(event);
+
+  const QMimeData* mimeData = event->mimeData();
+
+  qDebug() << Q_FUNC_INFO << event->mimeData()->formats();
+
+  if (mimeData->hasFormat(QStringLiteral("application/x-qstandarditemmodeldatalist"))) {
+    if (event->dropAction() == Qt::CopyAction) {
+      const QMimeData* mimeData = event->mimeData();
+      if (mimeData->hasFormat(QStringLiteral("application/x-qstandarditemmodeldatalist"))) {
+        QByteArray encoded = mimeData->data(QStringLiteral("application/x-qstandarditemmodeldatalist"));
+        QDataStream stream(&encoded, QIODevice::ReadOnly);
+        int row, col;
+        while (!stream.atEnd()) {
+          QMap<int,  QVariant> roleDataMap;
+          stream >> row >> col >> roleDataMap;
+          if (roleDataMap.contains(Qt::UserRole+1)) {
+            QString className = roleDataMap[Qt::UserRole+1].toString();
+            addObject(className,event->scenePos());
+            event->acceptProposedAction();
+          }
+        }
+      }
+    }
+  }
+  /*
+  else if (mimeData->hasFormat(SlotMimeData::MIME_TYPE)) {
+    // Handle connection endpoint drag
+    const SlotMimeData* slotMimeData = dynamic_cast<const SlotMimeData*>(mimeData);
+    if (slotMimeData) {
+      //qDebug() << Q_FUNC_INFO << "insert connection";
+      Connection* connector = slotMimeData->connector();
+      _connectionPaths.insert(connector->connectionId(),connector);
+      event->acceptProposedAction();
+    }
+    QGraphicsScene::dropEvent(event);
+  }
+  else if (mimeData->hasFormat(SignalMimeData::MIME_TYPE)) {
+    // Handle connection endpoint drag
+    const SignalMimeData* signalMimeData = dynamic_cast<const SignalMimeData*>(mimeData);
+    if (signalMimeData) {
+      //qDebug() << Q_FUNC_INFO << "insert connection";
+      Connection* connector = signalMimeData->connector();
+      _connectionPaths.insert(connector->connectionId(),connector);
+      event->acceptProposedAction();
+    }
+    QGraphicsScene::dropEvent(event);
+  }
+  else if (mimeData->hasFormat(ConnectionMimeData::MIME_TYPE)) {
+    // Handle connection endpoint drag
+    const ConnectionMimeData* connectionMimeData = dynamic_cast<const ConnectionMimeData*>(mimeData);
+    if (connectionMimeData) {
+      qDebug() << Q_FUNC_INFO
+               << connectionMimeData->senderId()
+               << connectionMimeData->signalIndex()
+               << connectionMimeData->receiverId()
+               << connectionMimeData->slotIndex();
+      // The connection mime data instance was created in the connection point and must be deleted here.
+      delete connectionMimeData;
+      event->acceptProposedAction();
+    }
+    QGraphicsScene::dropEvent(event);
+  }
+  */
+}
+
+void Graph::dragMoveEvent(QGraphicsSceneDragDropEvent *event) {
+
+  const QMimeData* mimeData = event->mimeData();
+
+  //qDebug() << Q_FUNC_INFO << event->mimeData()->formats();
+
+  if (mimeData->hasFormat(QStringLiteral("application/x-qstandarditemmodeldatalist"))) {
+
+    // Handle object class drop test
+
+    QByteArray encoded = mimeData->data(QStringLiteral("application/x-qstandarditemmodeldatalist"));
+    QDataStream stream(&encoded, QIODevice::ReadOnly);
+    int row, col;
+    while (!stream.atEnd()) {
+      QMap<int,  QVariant> roleDataMap;
+      stream >> row >> col >> roleDataMap;
+      //qDebug() << roleDataMap;
+    }
+    event->accept();
+
+  }
+  else if (mimeData->hasFormat(SlotMimeData::MIME_TYPE)) {
+    // Handle connection endpoint drag
+    const SlotMimeData* slotMimeData = dynamic_cast<const SlotMimeData*>(mimeData);
+    if (slotMimeData) {
+      qDebug() << Q_FUNC_INFO << "update connector signal endpoint to" << event->scenePos();
+      Edge* connectionPath = slotMimeData->edge();
+      connectionPath->setSignalPosition(event->scenePos());
+    }
+    QGraphicsScene::dragMoveEvent(event);
+  }
+  else if (mimeData->hasFormat(SignalMimeData::MIME_TYPE)) {
+    // Handle connection endpoint drag
+    const SignalMimeData* signalMimeData = dynamic_cast<const SignalMimeData*>(mimeData);
+    if (signalMimeData) {
+      qDebug() << Q_FUNC_INFO << "update connector slot endpoint to" << event->scenePos();
+      Edge* connectionPath = signalMimeData->edge();
+      connectionPath->setSlotPosition(event->scenePos());
+    }
+    QGraphicsScene::dragMoveEvent(event);
+  }
+  else if (mimeData->hasFormat(QStringLiteral("application/x-graphicswidgetref"))) {
+    // Handle node box resize
+    //qDebug() << Q_FUNC_INFO << mimeData->data(QStringLiteral("application/x-graphicswidgetref")) << event->pos() << event->scenePos();
+
+    const GraphicsItemMimeData* dragMimeData = qobject_cast<const GraphicsItemMimeData*>(event->mimeData());
+    if (dragMimeData) {
+      Node* node = dynamic_cast<Node*>(dragMimeData->item());
+
+      QRectF geom = node->geometry();
+      double targetWidth = event->scenePos().x() - geom.left();
+      double targetHeight = event->scenePos().y() - geom.top();
+      QSizeF newSize(targetWidth,targetHeight);
+
+      setObjectNodeSize(node->objectId(),newSize);
+    }
+  }
+  else {
+    QGraphicsScene::dragMoveEvent(event);
+  }
+
+}
+
+void Graph::keyReleaseEvent(QKeyEvent * keyEvent)
+{
+  if(/*keyEvent->key() == Qt::Key_Backspace || */keyEvent->key() == Qt::Key_Delete) {
+    QList<QGraphicsItem*> selection = selectedItems();
+    for (QGraphicsItem* item : selection) {
+      Node* node = dynamic_cast<Node*>(item);
+      if (node) {
+        removeObject(node->objectId());
+      }
+      else {
+        Edge* connectionPath = dynamic_cast<Edge*>(item);
+        if (connectionPath) {
+          removeConnection(connectionPath->connectionId());
+        }
+      }
+    }
+  }
+}
+
+void Graph::onObjectAdded(int objectId) {
+  addObjectNode(objectId,_model.className(objectId),QPointF());
+  QObject* object = _model.object(objectId);
+  Node* objectNode = new Node(object);
+  QVariant v = object->property("x-node-geometry");
+  if (v.isValid()) {
+    objectNode->setGeometry(v.toRectF());
+  }
+  addItem(objectNode);
+  _nodes.insert(objectId,objectNode);
+  clearSelection();
+}
+
+void Graph::onObjectRemoved(int objectId) {
+  qDebug() << Q_FUNC_INFO << objectId;
+  Node* objectNode = _nodes.take(objectId);
+  if (objectNode) {
+    removeItem(objectNode);
+    objectNode->close();
+  }
+}
+
+void Graph::onConnectionAdded(int connectionId) {
+}
+
+void Graph::onConnectionRemoved(int connectionId) {
+  qDebug() << Q_FUNC_INFO << connectionId;
+}
+

@@ -1,0 +1,66 @@
+#include "GraphNode.h"
+#include <QGraphicsLinearLayout>
+#include <QGraphicsGridLayout>
+#include <QGraphicsProxyWidget>
+#include <QWidget>
+#include <QMetaObject>
+
+GraphNode::GraphNode(QObject* object, QGraphicsItem* parent)
+  : QGraphicsWidget(parent)
+  , _object(object)
+{
+
+  bool isWidget = qobject_cast<QWidget*>(_object) != nullptr;
+
+  QGraphicsLinearLayout* nodeLayout = new QGraphicsLinearLayout(Qt::Vertical,this);
+
+  QGraphicsLinearLayout* headerLayout = new QGraphicsLinearLayout(Qt::Horizontal,nodeLayout);
+  QGraphicsLinearLayout* bodyLayout = new QGraphicsLinearLayout(Qt::Horizontal,nodeLayout);
+  QGraphicsLinearLayout* footerLayout = new QGraphicsLinearLayout(Qt::Horizontal,nodeLayout);
+
+  nodeLayout->addItem(headerLayout);
+  nodeLayout->addItem(bodyLayout);
+  nodeLayout->addItem(footerLayout);
+
+  QGraphicsLinearLayout* slotsLayout = new QGraphicsLinearLayout(Qt::Vertical,bodyLayout);
+  bodyLayout->addItem(slotsLayout);
+  if (isWidget) {
+    QGraphicsGridLayout* proxyLayout = new QGraphicsGridLayout(bodyLayout);
+    QGraphicsProxyWidget* proxy = new QGraphicsProxyWidget(this);
+    proxy->setWidget(qobject_cast<QWidget*>(_object));
+    bodyLayout->addItem(proxyLayout);
+  }
+  QGraphicsLinearLayout* signalsLayout = new QGraphicsLinearLayout(Qt::Vertical,bodyLayout);
+  bodyLayout->addItem(signalsLayout);
+
+  const QMetaObject* metaObject = _object->metaObject();
+  for (int i = metaObject->methodOffset(); metaObject->methodCount(); i++) {
+    QMetaMethod metaMethod = metaObject->method(i);
+    if (metaMethod.access() == QMetaMethod::Public) {
+      if (metaMethod.methodType() == QMetaMethod::Signal) {
+        addSignal(metaMethod,signalsLayout);
+      }
+      else if (metaMethod.methodType() == QMetaMethod::Signal) {
+        addSlot(metaMethod,slotsLayout);
+      }
+    }
+  }
+}
+
+void GraphNode::addSignal(const QMetaMethod& metaMethod, QGraphicsLinearLayout* layout) {
+  QGraphicsLinearLayout* slotLayout = new QGraphicsLinearLayout(layout);
+  layout->addItem(slotLayout);
+  
+}
+
+void GraphNode::addSlot(const QMetaMethod& metaMethod, QGraphicsLinearLayout* layout) {
+  
+}
+
+QPainterPath GraphNode::shape() const {
+  
+}
+
+QRectF GraphNode::boundingRect() const {
+  
+}

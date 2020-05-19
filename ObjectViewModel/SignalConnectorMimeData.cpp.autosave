@@ -1,0 +1,18 @@
+#include "SignalConnectorMimeData.h"
+
+const QString SignalConnectorMimeData::SIGNAL_MIME_TYPE("application/x-signal-connection-point");
+
+SignalConnectorMimeData::SignalConnectorMimeData(Connector* connector)
+  : ConnectorMimeData(connector)
+{
+}
+
+QStringList SignalConnectorMimeData::formats() const {
+  QStringList formatList;
+  formatList << SIGNAL_MIME_TYPE;
+  return formatList;
+}
+
+bool SignalConnectorMimeData::hasFormat(const QString &mimeType) const {
+  return mimeType == SIGNAL_MIME_TYPE;
+}

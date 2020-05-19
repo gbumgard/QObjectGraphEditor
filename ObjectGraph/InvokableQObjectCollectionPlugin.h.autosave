@@ -1,0 +1,33 @@
+#ifndef INVOKABLEOBJECTCOLLECTIONPLUGIN_H
+#define INVOKABLEOBJECTCOLLECTIONPLUGIN_H
+
+#include <QGenericPlugin>
+#include <QMetaObject>
+#include <QMap>
+#include <QString>
+#include <memory>
+#include "QObjectFactory.h"
+
+#define REGISTER_CLASS(qobject) \
+    static bool init = InvokableObjectCollectionPlugin::registerMetaObject(qobject::staticMetaObject);
+
+class InvokableQObjectCollectionPlugin : public QGenericPlugin
+{
+  Q_OBJECT
+
+public:
+
+  virtual ~InvokableQObjectCollectionPlugin() {}
+
+  virtual QObject* create(const QString& name, const QString &spec);
+
+  virtual QList<QString> names() const = ;
+
+protected:
+
+  InvokableQObjectCollectionPlugin(QObject *parent = 0);
+
+
+};
+
+#endif // INVOKABLEOBJECTCOLLECTIONPLUGIN_H

@@ -1,0 +1,33 @@
+#ifndef GRAPHNODE_H
+#define GRAPHNODE_H
+
+#include <QGraphicsWidget>
+
+#include <QMetaMethod>
+
+class QGraphicsLinearLayout;
+
+class GraphNode : QGraphicsWidget
+{
+
+  Q_OBJECT
+  
+public:
+
+  GraphNode(QObject* object, QGraphicsItem* parent = nullptr);
+
+  QPainterPath shape() const override;
+  QRectF boundingRect() const override;
+
+protected:
+
+  void addSignal(const QMetaMethod& metaMethod, QGraphicsLinearLayout* layout);
+  void addSlot(const QMetaMethod& metaMethod, QGraphicsLinearLayout* layout);
+
+  private:
+
+  QObject* _object;
+
+};
+
+#endif // GRAPHNODE_H

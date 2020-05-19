@@ -1,0 +1,125 @@
+#ifndef NODEGRAPH_H
+#define NODEGRAPH_H
+
+#include "objectview_global.h"
+
+#include <QGraphicsScene>
+#include <QMap>
+#include <QUndoStack>
+
+#include "ObjectModel.h"
+
+class GraphNode;
+class GraphEdge;
+
+class OBJECTVIEWSHARED_EXPORT ObjectModelView
+  : public QGraphicsScene
+{
+
+  friend class GraphNode;
+  friend class AddObjectCommand;
+  friend class RemoveObjectCommand;
+  friend class AddConnectionCommand;
+  friend class RemoveConnectionCommand;
+  friend class SetObjectNodeSizeCommand;
+  friend class SetObjectNodeGeometryCommand;
+  friend class SetObjectPropertyCommand;
+
+  Q_OBJECT
+
+public:
+
+  ObjectModelView(QObject* parent = nullptr);
+
+  virtual ~ObjectModelView() {}
+
+  /*
+  bool open(const QString& dbFileName, const QString& dbDriverName = QStringLiteral("QSQLITE"));
+
+  bool load(const QString& fileName);
+  bool save(const QString& filename) const;
+
+  bool loadPluginObjects(const QStringList& paths);
+  */
+
+  bool load(const QString& fileName);
+  bool save(const QString& filename) const;
+  
+  bool read(QDataStream& in);
+  bool write(QDataStream& out) const;
+
+  void setModel(ObjectModel* model);
+  ObjectModel* model() const;
+  
+  int addNode(const QString& className);
+  void removeNode(int objectId);
+
+  int addEdge(int senderId, int signalIndex, int receiverId, int slotIndex);
+  void removeEdge(int edgeId);
+  
+  void setNodePosition(int objectId, const QPointF& position);
+  void setNodeSize(int objectId, const QSizeF& size);
+  void setNodeGeometry(int objectId, const QRectF& size);
+  void setProperty(int objectId, const QString& propertyName, const QVariant& propertyValue);
+
+
+  void addObject(const QString& className, const QPointF& position);
+  void removeObject(int objectId);
+
+  void addConnection(int senderId, int signalIndex, int receiverId, int slotIndex);
+  void removeConnection(int connectionId);
+
+  void setObjectProperty(int objectId, const QString& propertyName, const QVariant &propertyValue);
+
+  void setObjectNodeSize(int objectId, const QSizeF& size);
+  void setObjectNodeSize(int objectId, const QSizeF& size);
+  void setObjectNodeGeometry(int objectId, const QRectF& geometry);
+
+  static qreal topZValue();
+
+public slots:
+
+  bool undo();
+  bool redo();
+
+private slots:
+
+  void onObjectAdded(int objectId);
+  void onObjectRemoved(int objectId);
+
+  void onConnectionAdded(int connectionId);
+  void onConnectionRemoved(int connectionId);
+
+protected:
+
+  int addObjectNode(int objectId, const QString& className, const QPointF& position);
+  void removeObjectNode(int objectId);
+  GraphNode* getObjectNode(int objectId) const;
+
+  GraphEdge* addConnectionPath(int connectionId, int senderId, int signalIndex, int receiverId, int slotIndex);
+  void removeConnectionPath(int connectionId);
+  GraphEdge* getConnectionPath(int connectionId) const;
+
+  static double _topZValue;
+
+  void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+  void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+  void dragEnterEvent(QGraphicsSceneDragDropEvent *event) override;
+  void dragLeaveEvent(QGraphicsSceneDragDropEvent *event) override;
+  void dropEvent(QGraphicsSceneDragDropEvent *event) override;
+  void dragMoveEvent(QGraphicsSceneDragDropEvent *event) override;
+  void keyReleaseEvent(QKeyEvent * keyEvent) override;
+
+private:
+
+  ObjectModel* _model;
+
+  QMap<int,GraphNode*> _nodes;
+  QMap<int,GraphEdge*> _edges;
+
+  QUndoStack _commandStack;
+
+};
+
+#endif // NODEGRAPH_H

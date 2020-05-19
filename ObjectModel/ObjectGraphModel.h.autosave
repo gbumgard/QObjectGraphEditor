@@ -1,0 +1,122 @@
+#ifndef OBJECTMODEL_H
+#define OBJECTMODEL_H
+
+#include "objectmodel_global.h"
+#include "Connection.h"
+
+#include <QMetaType>
+#include <QObject>
+#include <QMap>
+#include <QSet>
+#include <QPair>
+
+class Connection;
+
+class OBJECTMODELSHARED_EXPORT ObjectGraphModel
+  : public QObject
+{
+
+  Q_OBJECT
+
+public:
+
+  static const char* ID_PROPERTY_NAME;
+  static const char* MODEL_PROPERTY_NAME;
+
+  enum Version {
+    VERSION_0_1_0 = 0x000100,
+    CURRENT_VERSION = VERSION_0_1_0
+  };
+
+  ObjectGraphModel(QObject* parent = nullptr);
+
+  virtual ~ObjectGraphModel();
+
+  bool load(const QString& fileName);
+  bool save(const QString& fileName) const;
+
+  bool read(QDataStream& in);
+  bool write(QDataStream& out) const;
+
+  void clear();
+
+  int addObject(const QString& className, int objectId = -1);
+
+  bool removeObject(int objectId);
+
+  int addConnection(int senderId,
+                    int signalIndex,
+                    int receiverId,
+                    int slotIndex,
+                    int connectionId = -1);
+
+  bool removeConnection(int connectionId);
+
+  bool canConnect(int senderId,
+                  int signalIndex,
+                  int receiverId,
+                  int slotIndex) const;
+
+  bool containsObject(int objectId) const;
+  bool containsObject(QObject* object) const;
+  QObject* object(int objectId) const;
+  QList<QObject*> objects() const;
+
+  int getObjectId(QObject* object) const;
+
+  QString className(int objectId) const;
+
+  bool containsConnection(int connectionId) const;
+  Connection connection(int connectionId) const;
+  QList<Connection> connections() const;
+  QList<Connection> connections(int objectId) const;
+  QList<Connection> connections(int objectId, int methodIndex) const;
+
+  void dump() const;
+
+public slots:
+
+
+signals:
+
+  void objectAdded(int objectId);
+  void objectRemoved(int objectId);
+
+  void connectionAdded(int connectionId);
+  void connectionRemoved(int connectionId);
+
+protected:
+
+  int addConnection(int senderId,
+                    const QString& signalSignature,
+                    int receiverId,
+                    const QString& slotSignature,
+                    int connectionId = -1);
+
+  bool connect(int senderId, int signalIndex, int receiverId, int slotIndex) const;
+  bool disconnect(int senderId, int signalIndex, int receiverId, int slotIndex) const;
+
+private:
+
+  static int _nextObjectId;
+  static int _nextConnectionId;
+  static QUuid _uuid;
+
+  QMap<int,QObject*> _objects;
+
+  /**
+   * @brief _connectionIndex
+   * Maps connection-id to connection description.
+   */
+  QMap<int,Connection> _connectionIndex;
+
+  /**
+   * @brief _objectConnectionIndex
+   * Maps object-id to method-index to connection-id.
+   */
+  QMap<int,QMap<int,QSet<int>>> _objectConnectionIndex;
+};
+
+Q_DECLARE_METATYPE(ObjectModel*)
+
+#endif // OBJECTMODEL_H

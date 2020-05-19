@@ -1,0 +1,568 @@
+#include "ObjectNode.h"
+
+#include <QApplication>
+#include <QMetaObject>
+#include <QMetaClassInfo>
+#include <QMetaProperty>
+#include <QWidget>
+#include <QDebug>
+#include <QGraphicsSceneMouseEvent>
+#include <QStyleOptionGraphicsItem>
+#include <QPainter>
+#include <QWidget>
+#include <QList>
+#include <QMarginsF>
+#include <QRgba64>
+
+#include <QGraphicsWidget>
+#include <QGraphicsLinearLayout>
+
+#include "ObjectGraph.h"
+#include "SlotConnectionPoint.h"
+#include "SignalConnectionPoint.h"
+#include "Edge.h"
+
+ObjectNode::ObjectNode(QObject* object, QGraphicsItem* parent)
+  : QGraphicsWidget(parent)
+  , _object(object)
+  , _proxy(nullptr)
+  , _padRadius(6.0)
+{
+  setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+  setAttribute(Qt::WA_DeleteOnClose);
+
+  connect(_object,&QObject::objectNameChanged,this,&ObjectNode::onObjectNameChanged);
+
+  _pen = QPen(Qt::white,2);
+  _brush = QBrush(Qt::gray);
+
+  ConnectionPoint::setRadius(_padRadius);
+
+  buildNode();
+  updateNodeLayout();
+  setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
+  /*
+  for (int i=0;i < metaObject()->propertyCount(); i++) {
+    QMetaProperty prop = metaObject()->property(i);
+    if (prop.isStored() && prop.isReadable() && prop.isWritable() && !prop.isConstant()) {
+      qDebug() << prop.name() << prop.type() << QMetaType::type(prop.typeName());
+      if (QMetaType::type(prop.typeName()) != QMetaType::UnknownType) {
+        QVariant value = prop.read(this);
+        if (value.isValid())
+          qDebug() << "     " << value << value.typeName();
+      }
+    }
+  }
+  for (int i=0;i < _object->metaObject()->propertyCount(); i++) {
+    QMetaProperty prop = _object->metaObject()->property(i);
+    if (prop.isStored() && prop.isReadable() && prop.isWritable() && !prop.isConstant()) {
+      qDebug() << prop.name() << prop.type() << QMetaType::type(prop.typeName());
+      if (QMetaType::type(prop.typeName()) != QMetaType::UnknownType) {
+        QVariant value = prop.read(_object);
+        if (value.isValid())
+          qDebug() << "     " << value << value.typeName();
+      }
+    }
+  }
+  */
+  connect(this,&ObjectNode::geometryChanged,[this]() {
+    if (_object) {
+      _object->setProperty("x-node-geometry",QVariant(geometry()));
+      //qDebug() << _object->property("x-node-geometry");
+    }
+  });
+}
+
+ObjectNode::~ObjectNode() {
+  if (scene()) scene()->removeItem(this);
+}
+
+ObjectGraph* ObjectNode::graph() const {
+  return dynamic_cast<ObjectGraph*>(scene());
+}
+
+ObjectModel* ObjectNode::model() const {
+  return graph()->objectModel();
+}
+
+void ObjectNode::closeEvent(QCloseEvent *event) {
+  (void)event;
+  qDebug() << Q_FUNC_INFO << _object->metaObject()->className() << _object->objectName();
+  for (auto pad : _slotConnectionPoints) {
+    pad->disconnect();
+  }
+  for (auto pad : _signalConnectionPoints) {
+    pad->disconnect();
+  }
+}
+
+bool ObjectNode::resizable() const {
+  if (_proxy && _proxy->widget()) {
+    QWidget* w = _proxy->widget();
+    QSizePolicy policy = w->sizePolicy();
+    return policy.horizontalPolicy() != QSizePolicy::Fixed
+           || policy.verticalPolicy() != QSizePolicy::Fixed;
+  }
+  return false;
+}
+
+void ObjectNode::updateNodeLayout() {
+
+  /*
+   *     ++--------------------------------------++
+   *     ||+------------------------------------+||
+   *     |||            Node Caption            |||
+   *     ||+------------------------------------+||
+   *     ||              +---------+             ||
+   *     |0 <slot name>  |         | <sign name> 0|
+   *     ||              |         |             ||
+   *     |0 <slot name>  |         | <sign name> 0|
+   *     ||              |         |             ||
+   *     |0 <slot name>  |         | <sign name> 0|
+   *     ||              +---------+             ||
+   *     ||+--------------------------------*   +||
+   *     ||| Status Message...              |  /|||
+   *     ||+--------------------------------+ +-+||
+   *     ++--------------------------------------++
+   *
+   */
+
+  int maxMethodCount = qMax(_slotTextItems.count(),_signalTextItems.count());
+  QSizeF methodCaptionSize = maxMethodCaptionSize();
+
+  qreal proxyWidth = 0, proxyHeight = 0;
+  if (_proxy && _proxy->widget()) {
+    //_proxy->widget()->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
+    proxyWidth = _proxy->preferredWidth();
+    proxyHeight = _proxy->preferredHeight();
+  }
+
+  qreal penSpacing = pen().width()/2.0;
+  qreal padRadius = _padRadius;
+  qreal textWidth = methodCaptionSize.width();
+  qreal textHeight = methodCaptionSize.height();
+  qreal textSpacingX = padRadius;
+  qreal textSpacingY = 4;
+  qreal proxySpacing = padRadius;
+  qreal lineHeight = textHeight + textSpacingY;
+
+  QFont captionFont = font();
+  captionFont.setBold(true);
+  captionFont.setPointSize(font().pointSize()+2);
+  _caption->setFont(captionFont);
+
+  QFont statusFont = font();
+  statusFont.setBold(true);
+  statusFont.setPointSize(font().pointSize()+2);
+  _status->setFont(captionFont);
+
+  qreal headerWidth = penSpacing + 2* textSpacingY + _caption->boundingRect().width();
+  qreal footerWidth = penSpacing + 2* textSpacingY + _status->boundingRect().width();
+
+  qreal boxLeft = penSpacing + padRadius;
+  qreal boxWidth = qMax((2 * (padRadius
+                              + penSpacing
+                              + textSpacingX
+                              + textWidth
+                              + proxySpacing
+                              + proxyWidth / 2.0)),
+                        qMax(headerWidth,footerWidth));
+
+  setPreferredWidth(boxWidth);
+  qreal fixedWidth = size().width()-2*(penSpacing + padRadius);
+  //qDebug() << "box-width=" << boxWidth << "fixed-width=" << fixedWidth;
+  boxWidth = qMax(boxWidth,fixedWidth);
+
+  qreal boxRight = boxLeft + boxWidth;
+  qreal boxHCenter = boxLeft + boxWidth / 2;
+
+  qreal boxTop = penSpacing;
+  qreal boxHeight = 2 * penSpacing
+                    + qMax(lineHeight * (maxMethodCount), proxyHeight + 2 * proxySpacing)
+                    + 4 * textSpacingY
+                    + 2 * lineHeight;
+
+  setPreferredHeight(boxHeight);
+
+  qreal fixedHeight = size().height()-2*penSpacing;
+  //qDebug() << "box-height=" << boxHeight << "fixed-height="<< fixedHeight;
+
+  boxHeight = qMax(boxHeight,fixedHeight);
+
+  qreal boxBottom = boxTop + boxHeight;
+
+  if (_proxy && _proxy->widget()) {
+    qreal availProxyHeight = boxHeight - 4 * textSpacingY - 2 * lineHeight - 2 * proxySpacing;
+    qreal availProxyWidth = boxWidth
+                            - 2 * padRadius
+                            - 2 * penSpacing
+                            - (_slotConnectionPoints.count() > 0 ? textWidth : 0)
+                            - (_signalConnectionPoints.count() > 0 ? textWidth : 0)
+                            - 2 * textSpacingX
+                            - 2 * proxySpacing;
+    _proxy->resize(availProxyWidth,availProxyHeight);
+    _proxy->setPos(QPointF(boxLeft+ padRadius + penSpacing + textSpacingX + textWidth + proxySpacing,
+                           lineHeight + penSpacing + 2 * textSpacingY + proxySpacing));
+
+  }
+
+  /*
+  qDebug() << "box-left=" << boxLeft
+           << "box-width=" << boxWidth
+           << "box-right=" << boxRight
+           << "box-top=" << boxTop
+           << "box-height=" << boxHeight
+           << "box-bottom=" << boxBottom
+           << "proxy-size=" << QSizeF(proxyWidth,proxyHeight)
+           << "min=" << minimumSize()
+           << "preferred=" << preferredSize()
+           << "geom=" << geometry();
+  */
+
+  QRectF rect(QPointF(boxLeft,boxTop),QPointF(boxRight,boxBottom));
+
+  QPainterPath path;
+  path.addRoundedRect(rect,5.0,5.0);
+
+  _rect->setPath(path);
+
+  _caption->setPos(boxHCenter - _caption->boundingRect().width()/2,
+                 penSpacing + textSpacingY);
+
+  _status->setPos(boxHCenter - _status->boundingRect().width()/2,
+                  boxBottom - penSpacing - textSpacingY - lineHeight);
+
+  if (resizable()) {
+    if (!_sizeGripper)
+      _sizeGripper = new NodeSizeGripper(QSizeF(20.0,20.0),this);
+    _sizeGripper->setPen(QPen(Qt::white,2));
+    _sizeGripper->setBrush(QBrush(Qt::darkGray));
+    _sizeGripper->setPos(boxRight-25,boxBottom-25);
+  }
+  else {
+    if (_sizeGripper) {
+      _sizeGripper->hide();
+    }
+  }
+
+  qreal methodTextOffsetY = penSpacing + 2 * textSpacingY + lineHeight;
+
+  if (_slotTextItems.count()) {
+    QPointF position(boxLeft + padRadius + penSpacing + textSpacingX, methodTextOffsetY);
+    for (auto textItem : _slotTextItems) {
+      textItem->setBrush(Qt::white);
+      textItem->setPos(position);
+      position = QPointF(position.x(),position.y()+lineHeight);
+    }
+  }
+
+  if (_signalTextItems.count()){
+    QPointF position(boxRight - padRadius - penSpacing - textSpacingX, methodTextOffsetY);
+    for (auto textItem : _signalTextItems) {
+      qreal width = textItem->boundingRect().size().width();
+      textItem->setBrush(Qt::white);
+      textItem->setPos(QPointF(position.x()-width,position.y()));
+      position = QPointF(position.x(),position.y()+lineHeight);
+    }
+  }
+
+  qreal methodPadOffsetY = penSpacing + 2 * textSpacingY + lineHeight + (lineHeight-padRadius)/2;
+  if (_slotConnectionPoints.count()) {
+    QPointF position(boxLeft,methodPadOffsetY);
+    for (auto connectionPoint : _slotConnectionPoints) {
+      connectionPoint->setPen(pen());
+      connectionPoint->setBrush(brush());
+      connectionPoint->setPos(position);
+      position = QPointF(position.x(),position.y()+lineHeight);
+    }
+  }
+
+  if (_signalConnectionPoints.count()){
+    QPointF position(boxRight,methodPadOffsetY);
+    for (auto connectionPoint : _signalConnectionPoints) {
+      connectionPoint->setPen(pen());
+      connectionPoint->setBrush(brush());
+      connectionPoint->setPos(position);
+      position = QPointF(position.x(),position.y()+lineHeight);
+    }
+  }
+  prepareGeometryChange();
+  updateBoundingRect();
+  updateShape();
+  updateGeometry();
+}
+
+QSizeF ObjectNode::maxMethodCaptionSize() const {
+  QRectF bounds;
+  for (auto textItem : _slotTextItems) {
+    bounds = bounds.united(textItem->boundingRect());
+  }
+  for (auto textItem : _signalTextItems) {
+    bounds = bounds.united(textItem->boundingRect());
+  }
+  return bounds.size();
+}
+
+void ObjectNode::buildNode() {
+
+  const QMetaObject* metaObject = _object->metaObject();
+
+  // Build temporary map of class info entries
+  QMap<QString,QString> classInfo;
+  for (int i = 0; i < metaObject->classInfoCount(); i++) {
+    const QMetaClassInfo metaClassInfo = metaObject->classInfo(i);
+    classInfo.insert(metaClassInfo.name(),metaClassInfo.value());
+  }
+
+  _rect = new QGraphicsPathItem(this);
+  _rect->setPen(QPen(Qt::white,2));
+  _rect->setBrush(QBrush(QRgba64::fromRgba(0x80,0x80,0x80,0xCC)));
+
+  _caption = new QGraphicsSimpleTextItem(classInfo.value("class-alias",_object->metaObject()->className()),this);
+  _caption->setPen(QPen(Qt::NoPen));
+  _caption->setBrush(Qt::white);
+
+  _status = new QGraphicsSimpleTextItem("OK",this);
+  _status->setPen(QPen(Qt::NoPen));
+  _status->setBrush(Qt::white);
+
+  if (resizable())
+    _sizeGripper = new NodeSizeGripper(QSizeF(20.0,20.0),this);
+  else
+    _sizeGripper = nullptr;
+
+  QWidget* widget = dynamic_cast<QWidget*>(_object);
+  if (widget) {
+    _proxy = new QGraphicsProxyWidget(this);
+    _proxy->setWidget(widget);
+    _proxy->setZValue(_rect->zValue()+1);
+    _proxy->widget()->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+  }
+
+  // Use QMetaObject.methodOffset for derived class unless a dynamic property specifies otherwise
+  int methodOffset = metaObject->methodOffset();
+  QVariant v = _object->property("methodOffset");
+  if (v.isValid()) methodOffset = v.toInt();
+
+  for (int i = methodOffset; i < metaObject->methodCount(); i++) {
+
+    QMetaMethod metaMethod = metaObject->method(i);
+
+    if (metaMethod.access() == QMetaMethod::Public) {
+      if (metaMethod.methodType() == QMetaMethod::Slot) {
+        QString name = classInfo.value(metaMethod.methodSignature(),metaMethod.name());
+        //_slotNames.insert(i,name);
+        SlotConnectionPoint* connectionPoint = new SlotConnectionPoint(metaMethod,this);
+        connectionPoint->setData(0,metaMethod.methodSignature());
+        _slotConnectionPoints.insert(i,connectionPoint);
+
+        QGraphicsSimpleTextItem* textItem = new QGraphicsSimpleTextItem(name,this);
+        textItem->setPen(QPen(Qt::NoPen));
+        textItem->setBrush(Qt::white);
+        _slotTextItems.insert(i,textItem);
+      }
+      else if (metaMethod.methodType() == QMetaMethod::Signal) {
+        QString name = classInfo.value(metaMethod.methodSignature(),metaMethod.name());
+        //_signalNames.insert(i,name);
+
+        SignalConnectionPoint* connectionPoint = new SignalConnectionPoint(metaMethod,this);
+        connectionPoint->setData(0,metaMethod.methodSignature());
+        _signalConnectionPoints.insert(i,connectionPoint);
+
+        QGraphicsSimpleTextItem* textItem = new QGraphicsSimpleTextItem(name,this);
+        textItem->setPen(QPen(Qt::NoPen));
+        textItem->setBrush(Qt::white);
+        _signalTextItems.insert(i,textItem);
+      }
+    }
+  }
+}
+
+void ObjectNode::setPen(const QPen& pen) {
+  if (_pen != pen) {
+    _pen = pen;
+    updateNodeLayout();
+  }
+}
+
+void ObjectNode::setBrush(const QBrush& brush) {
+  if (_brush != brush) {
+    _brush = brush;
+    updateNodeLayout();
+  }
+}
+
+void ObjectNode::setPadRadius(qreal padRadius) {
+  if (_padRadius != padRadius) {
+    _padRadius = padRadius;
+    ConnectionPoint::setRadius(_padRadius);
+    updateNodeLayout();
+  }
+}
+
+void ObjectNode::setCaption(const QString& title) {
+  if (_caption->text() != title) {
+    _caption->setText(title);
+    updateNodeLayout();
+  }
+}
+
+void ObjectNode::setStatus(const QString& status) {
+  if (_status->text() != status) {
+    _status->setText(status);
+    updateNodeLayout();
+  }
+}
+
+void ObjectNode::onObjectNameChanged(const QString& name) {
+  setCaption(name);
+}
+
+void ObjectNode::bindToSignalConnectionPoint(int signalIndex, Edge* edge) {
+  if (_signalConnectionPoints.contains(signalIndex)) {
+    SignalConnectionPoint* cp = _signalConnectionPoints[signalIndex];
+    edge->setSignalPosition(cp->scenePos());
+    connect(cp,&ConnectionPoint::scenePositionChanged,edge,&Edge::setSignalPosition);
+  }
+}
+
+void ObjectNode::bindToSlotConnectionPoint(int slotIndex, Edge* edge) {
+  if (_slotConnectionPoints.contains(slotIndex)) {
+    SlotConnectionPoint* cp = _slotConnectionPoints[slotIndex];
+    edge->setSlotPosition(cp->scenePos());
+    connect(cp,&ConnectionPoint::scenePositionChanged,edge,&Edge::setSlotPosition);
+  }
+}
+
+void ObjectNode::resizeEvent(QGraphicsSceneResizeEvent *event) {
+  updateNodeLayout();
+  _object->setProperty("x-geometry",QVariant(geometry()));
+  event->accept();
+}
+
+QPainterPath ObjectNode::shape() const {
+  return _shape;
+}
+
+QRectF ObjectNode::boundingRect() const {
+  return _boundingRect;
+}
+
+QSizeF ObjectNode::sizeHint(Qt::SizeHint which, const QSizeF &constraint) const {
+  QSizeF hint;
+  switch (which) {
+    case Qt::MinimumSize:
+      hint = QSizeF(0,0);
+      break;
+    case Qt::PreferredSize:
+    {
+      hint = _boundingRect.size();
+      break;
+    }
+    case Qt::MaximumSize:
+    default:
+      hint = QSizeF(16777215,16777215);
+      break;
+  }
+  if (constraint.width() != -1) hint.setWidth(constraint.width());
+  if (constraint.height() != -1) hint.setHeight(constraint.height());
+  return hint;
+}
+
+void ObjectNode::updateBoundingRect() {
+  QRectF rect;
+  rect = rect.united(QRectF(_rect->boundingRect().topLeft()+_rect->pos(),_rect->boundingRect().size()));
+  for (auto connectionPoint : _slotConnectionPoints) {
+    rect = rect.united(QRectF(connectionPoint->boundingRect().topLeft() + connectionPoint->pos(),
+                              connectionPoint->boundingRect().size()));
+  }
+  for (auto connectionPoint : _signalConnectionPoints) {
+    rect = rect.united(QRectF(connectionPoint->boundingRect().topLeft() + connectionPoint->pos(),
+                              connectionPoint->boundingRect().size()));
+  }
+  _boundingRect = rect;
+}
+
+void ObjectNode::updateShape() {
+  QPainterPath path = _rect->shape();
+  path.translate(_rect->pos());
+  _shape = path;
+  for (auto connectionPoint : _slotConnectionPoints) {
+    QPainterPath path = connectionPoint->shape();
+    path.translate(_rect->pos());
+    _shape.addPath(path);
+  }
+  for (auto connectionPoint : _signalConnectionPoints) {
+    QPainterPath path = connectionPoint->shape();
+    path.translate(_rect->pos());
+    _shape.addPath(path);
+  }
+  _shape = path;
+}
+
+
+QVariant ObjectNode::itemChange(GraphicsItemChange change, const QVariant &value) {
+  if (change == QGraphicsItem::ItemSelectedChange) {
+    //qDebug() << Q_FUNC_INFO << value;
+    _rect->setPen(value.toBool() ? QPen(QColor("orange"),2) : QPen(Qt::white,2));
+    for (auto connectionPoint : _slotConnectionPoints) {
+      connectionPoint->setPen(value.toBool() ? QPen(QColor("orange"),2) : QPen(Qt::white,2));
+    }
+    for (auto connectionPoint : _signalConnectionPoints) {
+      connectionPoint->setPen(value.toBool() ? QPen(QColor("orange"),2) : QPen(Qt::white,2));
+    }
+    setPen(value.toBool() ? QPen(QColor("orange"),2) : QPen(Qt::white,2));
+    update();
+  }
+  else if (change == QGraphicsItem::ItemPositionChange) {
+    graph()->setObjectNodeGeometry(objectId(),geometry());
+  }
+
+  return QGraphicsObject::itemChange(change,value);
+}
+
+void ObjectNode::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
+  QGraphicsObject::mouseMoveEvent(event);
+}
+
+void ObjectNode::mousePressEvent(QGraphicsSceneMouseEvent *event) {
+  if (event->button() == Qt::LeftButton) {
+    setZValue(ObjectGraph::topZValue());
+  }
+  QGraphicsObject::mousePressEvent(event);
+}
+
+void ObjectNode::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
+  event->ignore();
+  QGraphicsObject::mouseReleaseEvent(event);
+}
+
+void ObjectNode::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {
+  event->ignore();
+  QGraphicsObject::hoverEnterEvent(event);
+}
+
+void ObjectNode::hoverLeaveEvent(QGraphicsSceneHoverEvent *event) {
+  event->ignore();
+  QGraphicsObject::hoverLeaveEvent(event);
+}
+
+void ObjectNode::dragEnterEvent(QGraphicsSceneDragDropEvent *event) {
+  event->ignore();
+  QGraphicsObject::dragEnterEvent(event);
+}
+
+void ObjectNode::dragLeaveEvent(QGraphicsSceneDragDropEvent *event) {
+  event->ignore();
+  QGraphicsObject::dragLeaveEvent(event);
+}
+
+void ObjectNode::dragMoveEvent(QGraphicsSceneDragDropEvent *event) {
+  event->ignore();
+  QGraphicsObject::dragMoveEvent(event);
+}
+
+void ObjectNode::dropEvent(QGraphicsSceneDragDropEvent *event) {
+  event->ignore();
+  QGraphicsObject::dropEvent(event);
+}

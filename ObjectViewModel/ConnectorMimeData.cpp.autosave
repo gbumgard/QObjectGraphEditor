@@ -1,0 +1,7 @@
+#include "ConnectorMimeData.h"
+
+ConnectorMimeData::ConnectorMimeData(Connector* connector)
+  : QMimeData()
+  , _connector(connector)
+{
+}

@@ -1,0 +1,12 @@
+#ifndef OBJECTVIEW_GLOBAL_H
+#define OBJECTVIEW_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(OBJECTVIEW_LIBRARY)
+#  define OBJECTVIEWSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define OBJECTVIEWSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // OBJECTVIEW_GLOBAL_H
