@@ -224,9 +224,13 @@ void QObjectGraphEditorApp::newModel() {
 }
 
 void QObjectGraphEditorApp::openModel() {
+  QString filter(tr("QObject Graph (*.qgr)"));
   QString fileName = QFileDialog::getOpenFileName(this,
                                                   tr("Open QObject Graph"), "",
-                                                  tr("QObject Graph (*.qgr);;All Files (*)"));
+                                                  filter,
+                                                  &filter,
+                                                  QFileDialog::DontUseNativeDialog);
+  if (!fileName.endsWith(".qgr")) fileName += ".qgr";
   if (open(fileName)) {
     QAction* actionOpenRecent = new QAction(fileName);
     connect(actionOpenRecent,&QAction::triggered,this,&QObjectGraphEditorApp::openRecentModel);
@@ -252,9 +256,15 @@ void QObjectGraphEditorApp::saveModel() {
 }
 
 void QObjectGraphEditorApp::saveModelAs() {
+  static QString filter(tr("QObject Graph (*.qgr)"));
+  QString selectedFilter(tr("*.qgr"));
   QString fileName = QFileDialog::getSaveFileName(this,
-                                                  tr("Save QObject Graph"), "",
-                                                  tr("QObject Graph (*.qgr);;All Files (*)"));
+                                                  tr("Save QObject Graph"),
+                                                  "",
+                                                  filter,
+                                                  &filter,
+                                                  QFileDialog::DontUseNativeDialog);
+  if (!fileName.endsWith(".qgr")) fileName += ".qgr";
   if (save(fileName)) {
     QAction* actionOpenRecent = new QAction(fileName);
     connect(actionOpenRecent,&QAction::triggered,this,&QObjectGraphEditorApp::openRecentModel);
