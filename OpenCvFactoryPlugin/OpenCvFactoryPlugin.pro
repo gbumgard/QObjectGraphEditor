@@ -6,6 +6,8 @@
 
 QT       += core widgets gui
 QT +=  opengl
+QT += datavisualization
+
 
 TARGET = OpenCvFactoryPlugin
 TEMPLATE = lib
@@ -13,16 +15,25 @@ CONFIG += plugin
 
 DESTDIR = ../plugins
 
-LIBS += \
-  -lopencv_core \
-  -lopencv_video \
-  -lopencv_videoio \
-  -lopencv_imgproc \
-  -lopencv_ximgproc\
-  -lopencv_imgcodecs \
-  -lopencv_highgui \
+LIBS += -L/usr/local/lib \
+  -lopencv_alphamat        -lopencv_cudawarping    -lopencv_imgcodecs            -lopencv_shape \
+  -lopencv_aruco           -lopencv_cudev          -lopencv_img_hash             -lopencv_stereo \
+  -lopencv_bgsegm          -lopencv_cvv            -lopencv_imgproc              -lopencv_stitching \
+  -lopencv_bioinspired     -lopencv_datasets       -lopencv_intensity_transform  -lopencv_structured_light \
+  -lopencv_calib3d         -lopencv_dnn_objdetect  -lopencv_line_descriptor      -lopencv_superres \
+  -lopencv_ccalib          -lopencv_dnn            -lopencv_ml                   -lopencv_surface_matching \
+  -lopencv_core            -lopencv_dnn_superres   -lopencv_objdetect            -lopencv_text \
+  -lopencv_cudaarithm      -lopencv_dpm            -lopencv_optflow              -lopencv_tracking \
+  -lopencv_cudabgsegm      -lopencv_face           -lopencv_phase_unwrapping     -lopencv_videoio \
+  -lopencv_cudacodec       -lopencv_features2d     -lopencv_photo                -lopencv_video \
+  -lopencv_cudafeatures2d  -lopencv_flann          -lopencv_plot                 -lopencv_videostab \
+  -lopencv_cudafilters     -lopencv_freetype       -lopencv_quality              -lopencv_viz \
+  -lopencv_cudaimgproc     -lopencv_fuzzy          -lopencv_rapid                -lopencv_world \
+  -lopencv_cudalegacy      -lopencv_gapi           -lopencv_reg                  -lopencv_xfeatures2d \
+  -lopencv_cudaobjdetect   -lopencv_hdf            -lopencv_rgbd                 -lopencv_ximgproc \
+  -lopencv_cudaoptflow     -lopencv_hfs            -lopencv_saliency             -lopencv_xobjdetect \
+  -lopencv_cudastereo      -lopencv_highgui        -lopencv_sfm                  -lopencv_xphoto \
   -lfreenect \
-  #-lfreenect_cv \
   -lfreenect2 \
   -lglut \
   -lpthread \
@@ -31,6 +42,7 @@ LIBS += \
 #  -lpcl_cuda_features \
 #  -lpcl_cuda_io \
 #  -lpcl_cuda_segmentation
+#-lfreenect_cv \
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings
@@ -50,7 +62,9 @@ INCLUDEPATH += \
 INCLUDEPATH += /usr/include/eigen3
 INCLUDEPATH += /usr/local/include/pcl-1.8
 INCLUDEPATH += /usr/include/libusb-1.0
+INCLUDEPATH += /usr/local/include/opencv4
 
+RESOURCES += surface.qrc
 
 DEPENDPATH += \
   $$PWD/../ObjectModel
@@ -63,14 +77,28 @@ DEPENDPATH += \
 SOURCES += \
     OpenCvFactoryPlugin.cpp \
     common/AbstractOpenCvObject.cpp \
+    filters/BilateralFilter.cpp \
+    filters/DepthFilterV2.cpp \
+    filters/InRangeFilter.cpp \
+    filters/MedianFilter3D.cpp \
+    filters/RunningStatistics.cpp \
+    filters/ThresholdFilter.cpp \
+    imageprocessing/BackgroundSubtractionMask.cpp \
+    imageprocessing/ConvertToGrayScale.cpp \
     operations/AddOperation.cpp \
     operations/AddWeightedOperation.cpp \
+    operations/BitwiseNotOperation.cpp \
+    operations/BitwiseOrOperation.cpp \
+    operations/InRangeOperation.cpp \
+    operations/MaskOperation.cpp \
+    operations/SetToScalarOperation.cpp \
     transformations/ClipAndNormalize.cpp \
     transformations/ConvertScaleAbs.cpp \
     filters/GaussianBlurFilter.cpp \
-    operations/MaskOperation.cpp \
     converters/MatToQImageConvertor.cpp \
-    viewers/MatViewer.cpp \
+    utility/MatInfo.cpp \
+    utility/ThreadDecoupler.cpp \
+    viewers/Mat3DViewer.cpp \
     transformations/MorphologyTransformation.cpp \
     sensors/OpenNiSensor.cpp \
     filters/RunningAverageFilter.cpp \
@@ -87,30 +115,43 @@ SOURCES += \
     renderers/DrawContours.cpp \
     operations/AbsDifferenceOperation.cpp \
     filters/TemporalMedianFilter.cpp \
-    filters/ThresholdFilter.cpp \
     sensors/KinectV1Sensor.cpp \
     imageprocessing/ApplyColorMap.cpp \
     imageprocessing/ApplyTerrainColorMap.cpp \
-    utility/MatInfo.cpp \
     filters/KinectV1DepthFilter.cpp \
     utility/RunningStatsUtility.cpp \
     utility/Statistics.cpp \
     filters/StatFilter.cpp \
     filters/DepthFilter.cpp \
     filters/ChangeCommitFilter.cpp \
-    filters/MaxFilter.cpp
+    filters/MaxFilter.cpp \
+    viewers/MatViewer.cpp
 
 
 HEADERS += \
     OpenCvFactoryPlugin.h \
     common/AbstractOpenCvObject.h \
+    filters/BilateralFilter.h \
+    filters/DepthFilterV2.h \
+    filters/InRangeFilter.h \
+    filters/MedianFilter3D.h \
+    filters/RunningStatistics.h \
+    filters/ThresholdFilter.h \
+    imageprocessing/BackgroundSubtractionMask.h \
+    imageprocessing/ConvertToGrayScale.h \
     operations/AddOperation.h \
     operations/AddWeightedOperation.h \
+    operations/BitwiseNotOperation.h \
+    operations/BitwiseOrOperation.h \
+    operations/InRangeOperation.h \
+    operations/MaskOperation.h \
+    operations/SetToScalarOperation.h \
     transformations/ClipAndNormalize.h \
     filters/GaussianBlurFilter.h \
-    operations/MaskOperation.h \
     converters/MatToQImageConvertor.h \
-    viewers/MatViewer.h \
+    utility/MatInfo.h \
+    utility/ThreadDecoupler.h \
+    viewers/Mat3DViewer.h \
     transformations/MorphologyTransformation.h \
     transformations/ConvertScaleAbs.h \
     sensors/OpenNiSensor.h \
@@ -128,18 +169,17 @@ HEADERS += \
     renderers/DrawContours.h \
     operations/AbsDifferenceOperation.h \
     filters/TemporalMedianFilter.h \
-    filters/ThresholdFilter.h \
     sensors/KinectV1Sensor.h \
     imageprocessing/ApplyColorMap.h \
     imageprocessing/ApplyTerrainColorMap.h \
-    utility/MatInfo.h \
     filters/KinectV1DepthFilter.h \
     utility/RunningStatsUtility.h \
     utility/Statistics.h \
     filters/StatFilter.h \
     filters/DepthFilter.h \
     filters/ChangeCommitFilter.h \
-    filters/MaxFilter.h
+    filters/MaxFilter.h \
+    viewers/MatViewer.h
 
 
 DISTFILES += OpenCvFactoryPlugin.json 
