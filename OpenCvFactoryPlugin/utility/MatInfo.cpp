@@ -9,15 +9,15 @@ MatInfo::MatInfo(QObject* parent)
 {
 }
 
-void MatInfo::in(const cv::Mat &mat) {
-  emit cols(mat.cols);
-  emit rows(mat.rows);
-  emit type(mat.type());
-  emit channels(mat.channels());
-  emit depth(mat.depth());
-
+void MatInfo::in(const TaggedMat &taggedMat) {
+  setSeq(taggedMat.second);
+  setCols(taggedMat.first.cols);
+  setRows(taggedMat.first.rows);
+  setChannels(taggedMat.first.channels());
+  setType((MatType)taggedMat.first.type());
+  setDepth((MatDepth)taggedMat.first.depth());
   double minVal, maxVal;
-  cv::minMaxLoc(mat,&minVal,&maxVal);
-  emit min(minVal);
-  emit max(maxVal);
+  cv::minMaxLoc(taggedMat.first,&minVal,&maxVal);
+  setMin(minVal);
+  setMax(maxVal);
 }

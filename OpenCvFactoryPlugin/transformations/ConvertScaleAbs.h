@@ -1,17 +1,19 @@
 #ifndef CONVERTSCALEABSOPERATION_H
 #define CONVERTSCALEABSOPERATION_H
 
+#include "OpenCvFactoryPlugin.h"
+
 #include <QObject>
 #include "AbstractOpenCvObject.h"
 #include <opencv2/core.hpp>
 
-class ConvertScaleAbs : public AbstractOpenCvObject
+class ConvertScaleAbs : public QObject
 {
 
   Q_OBJECT
 
   Q_CLASSINFO("class-alias","Convert/Scale Absolute")
-  Q_CLASSINFO("directory","OpenCV/Operations")
+  Q_CLASSINFO("directory","OpenCV/Transformations")
 
   Q_PROPERTY(double scale READ scale WRITE scale)
   Q_PROPERTY(double offset READ offset WRITE offset)
@@ -27,26 +29,21 @@ public:
 
 public slots:
 
-  void in(const cv::Mat& alpha);
+  void in(const TaggedMat& alpha);
 
   void scale(double scale);
   void offset(double offset);
 
 signals:
 
-  void out(const cv::Mat& mat);
+  void out(const TaggedMat& taggedMat);
 
 protected:
-
-  void update();
 
 private:
 
   double _scale;
   double _offset;
-
-  cv::Mat _input;
-
 };
 
 #endif // CONVERTSCALEABSOPERATION_H

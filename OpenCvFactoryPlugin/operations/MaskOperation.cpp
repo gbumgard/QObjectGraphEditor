@@ -10,26 +10,20 @@ MaskOperation::MaskOperation(QObject* parent)
 {
 }
 
-void MaskOperation::in(const cv::Mat &mat) {
-  _input = mat;
-  if (_mask.empty()) {
-    _mask = cv::Mat(cv::Size(_input.cols, _input.rows), CV_8U, cv::Scalar(255));
-  }
+void MaskOperation::in(const TaggedMat &taggedMat) {
+  _input = taggedMat;
   update();
 }
 
-void MaskOperation::mask(const cv::Mat &mat) {
-  _mask = mat;
+void MaskOperation::mask(const TaggedMat &taggedMat) {
+  _mask = taggedMat;
   update();
 }
 
 void MaskOperation::update() {
-  if (!_input.empty() && !_mask.empty() &&
-      _input.cols == _mask.cols &&
-      _input.rows == _mask.rows) {
-    cv::Mat dst(cv::Size(_input.cols, _input.rows), _input.type(), cv::Scalar(0));
-    _input.copyTo(dst,_mask);
-    emit out(dst);
-    emit maskUsed(_mask);
+  if (!_input.first.empty() && !_mask.first.empty() && _input.second == _mask.second && _input.first.size() == _mask.first.size()) {
+    cv::Mat dst;
+    _input.first.copyTo(dst,_mask.first > 0);
+    emit out(TaggedMat(dst,_input.second));
   }
 }

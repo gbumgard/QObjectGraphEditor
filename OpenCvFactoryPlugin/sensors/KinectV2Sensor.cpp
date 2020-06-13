@@ -119,6 +119,7 @@ bool KinectV2Sensor::open(const std::string& serial)
 
   if (dev_->start()) {
 
+    libfreenect2::setGlobalLogger(libfreenect2::createConsoleLogger(libfreenect2::Logger::Warning));
     logger_ = libfreenect2::getGlobalLogger();
 
     registration_ = new libfreenect2::Registration(dev_->getIrCameraParams(), dev_->getColorCameraParams());
@@ -260,6 +261,8 @@ void KinectV2Sensor::update()
       mUpdateRegisteredColorRequired ||
       mUpdatePointCloudMapRequired) {
 
+    int seq = OpenCvFactoryPlugin::nextTag();
+
     if (listener_.waitForNewFrame(frames_,1000)) {
       libfreenect2::Frame * rgbFrame = frames_[libfreenect2::Frame::Color];
       libfreenect2::Frame * depthFrame = frames_[libfreenect2::Frame::Depth];
@@ -277,7 +280,7 @@ void KinectV2Sensor::update()
         if (mirror_ == true) {
           cv::flip(irMat, irMat, 1);
         }
-        emit ir(irMat);
+        emit ir(TaggedMat(irMat,seq));
       }
 
       if (mUpdateUndistortedDepthRequired || mUpdateRegisteredColorRequired || mUpdatePointCloudMapRequired) {
@@ -301,8 +304,8 @@ void KinectV2Sensor::update()
           cv::Mat mat16UC1;
           undistortedDepthMat.convertTo(mat16UC1,CV_16UC1,1.0);
 
-          emit undistortedDepth(mat16UC1);
-          emit registeredColor(registeredColorMat);
+          emit undistortedDepth(TaggedMat(mat16UC1,seq));
+          emit registeredColor(TaggedMat(registeredColorMat,seq));
         }
 
       }
@@ -319,8 +322,10 @@ void KinectV2Sensor::update()
 
       cv::cvtColor(colorMat,colorMat,cv::COLOR_RGBA2BGR,3);
 
-      emit depth(mat16UC1);
-      emit color(colorMat);
+      emit depth(TaggedMat(mat16UC1,seq));
+      TaggedMat tagged(mat16UC1,OpenCvFactoryPlugin::nextTag());
+      qDebug() << tagged.second;
+      emit color(TaggedMat(colorMat,seq));
 
   #if WITH_PCL
 

@@ -6,6 +6,7 @@
 #include <QDebug>
 
 REGISTER_CLASS(MatViewer)
+
 inline QImage mat_to_qimage_ref(cv::Mat &mat, QImage::Format format)
 {
   return QImage(mat.data, mat.cols, mat.rows, static_cast<int>(mat.step), format);
@@ -60,6 +61,7 @@ inline QImage mat_to_qimage_cpy(cv::Mat const &mat, bool swap)
 
 MatViewer::MatViewer(QWidget *parent)
   : QWidget(parent)
+  , _swapRedBlue(false)
   , _imageSize()
 {
   setProperty("methodOffset",QWidget::staticMetaObject.methodOffset());
@@ -68,12 +70,12 @@ MatViewer::MatViewer(QWidget *parent)
   setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding);
 }
 
-void MatViewer::in(const cv::Mat& mat) {
+void MatViewer::in(const TaggedMat& taggedMat) {
   cv::Mat mat8UC3;
-  mat.convertTo(mat8UC3,CV_8UC3);
-  _image = mat_to_qimage_cpy(mat8UC3,true);
-  if (mat.size() != _imageSize) {
-    _imageSize = mat.size();
+  taggedMat.first.convertTo(mat8UC3,CV_8UC3);
+  _image = mat_to_qimage_cpy(mat8UC3,_swapRedBlue);
+  if (taggedMat.first.size() != _imageSize) {
+    _imageSize = taggedMat.first.size();
     qDebug() << Q_FUNC_INFO << _imageSize.width << _imageSize.height;
     setMinimumSize(_imageSize.width,_imageSize.height);
     adjustSize();

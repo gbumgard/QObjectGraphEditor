@@ -1,5 +1,7 @@
-#ifndef MASKOPERATION_H
-#define MASKOPERATION_H
+#ifndef TaggedMaskOperation_H
+#define TaggedMaskOperation_H
+
+#include "OpenCvFactoryPlugin.h"
 
 #include <QObject>
 
@@ -22,13 +24,12 @@ public:
 
 public slots:
 
-  void in(const cv::Mat& mat);
-  void mask(const cv::Mat& mat);
+  void in(const TaggedMat& taggedMat);
+  void mask(const TaggedMat& taggedMat);
 
 signals:
 
-  void out(const cv::Mat& mat);
-  void maskUsed(const cv::Mat& mat);
+  void out(const TaggedMat& mat);
 
 protected:
 
@@ -36,9 +37,9 @@ protected:
 
 private:
 
-  cv::Mat _input;
-  cv::Mat _mask;
+  TaggedMat _input;
+  TaggedMat _mask;
 
 };
 
-#endif // MASKOPERATION_H
+#endif // TaggedMaskOperation_H

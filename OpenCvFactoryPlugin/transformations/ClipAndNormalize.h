@@ -1,11 +1,13 @@
 #ifndef CLIPANDNORMALIZE_H
 #define CLIPANDNORMALIZE_H
 
+#include "OpenCvFactoryPlugin.h"
+
 #include <QObject>
 #include "AbstractOpenCvObject.h"
 #include <opencv2/core.hpp>
 
-class ClipAndNormalize : public AbstractOpenCvObject
+class ClipAndNormalize : public QObject
 {
 
   Q_OBJECT
@@ -31,7 +33,7 @@ public:
 
 public slots:
 
-  void in(const cv::Mat& mat);
+  void in(const TaggedMat& mat);
 
   void minimum(double value);
   void maximum(double value);
@@ -40,16 +42,9 @@ public slots:
 
 signals:
 
-  void out(const cv::Mat& mat);
-
-  void minValueIn(double minimum);
-  void maxValueIn(double maximum);
+  void out(const TaggedMat& mat);
 
 protected:
-
-  void update();
-
-  cv::Mat _input;
 
   double _minimum;
   double _maximum;

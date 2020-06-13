@@ -6,7 +6,7 @@
 REGISTER_CLASS(ConvertScaleAbs)
 
 ConvertScaleAbs::ConvertScaleAbs(QObject* parent)
-  : AbstractOpenCvObject(parent)
+  : QObject(parent)
   , _scale(1.0)
   , _offset(0.0)
 {
@@ -14,23 +14,16 @@ ConvertScaleAbs::ConvertScaleAbs(QObject* parent)
 
 void ConvertScaleAbs::scale(double scale) {
   _scale = scale;
-  update();
 }
 
 void ConvertScaleAbs::offset(double offset) {
   _offset = offset;
-  update();
 }
 
-void ConvertScaleAbs::in(const cv::Mat &src) {
-  _input = src;
-  update();
-}
-
-void ConvertScaleAbs::update() {
-  if (!_input.empty()) {
+void ConvertScaleAbs::in(const TaggedMat &taggedMat) {
+  if (!taggedMat.first.empty()) {
     cv::Mat dst;
-    cv::convertScaleAbs(_input, dst, _scale, _offset);
-    emit out(dst);
+    cv::convertScaleAbs(taggedMat.first, dst, _scale, _offset);
+    emit out(TaggedMat(dst,taggedMat.second));
   }
 }

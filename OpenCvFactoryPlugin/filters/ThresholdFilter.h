@@ -1,6 +1,7 @@
 #ifndef THRESHOLD_H
 #define THRESHOLD_H
 
+#include <OpenCvFactoryPlugin.h>
 #include <QObject>
 #include <QLoggingCategory>
 #include <opencv2/imgproc.hpp>
@@ -57,20 +58,17 @@ public:
 
 public slots:
 
-  void in(const cv::Mat& mat);
+  void in(const TaggedMat& taggedMat);
 
   void threshold(double threshold);
   void maximum(double maximum);
 
 signals:
 
-  void out(const cv::Mat& mat);
+  void out(const TaggedMat& mat);
 
 protected:
 
-  void update();
-
-  cv::Mat _input;
   FilterType _filterType;
   double _threshold;
   double _maximum;

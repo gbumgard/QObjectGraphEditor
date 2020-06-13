@@ -9,6 +9,7 @@
 #include <QWaitCondition>
 #include <QMetaType>
 
+#include "OpenCvFactoryPlugin.h"
 #include <opencv2/opencv.hpp>
 
 #include <libfreenect2/libfreenect2.hpp>
@@ -70,11 +71,12 @@ public slots:
 
 signals:
 
-  void depth(const cv::Mat& mat);
-  void color(const cv::Mat& mat);
-  void ir(const cv::Mat& mat);
-  void undistortedDepth(const cv::Mat& mat);
-  void registeredColor(const cv::Mat& mat);
+  void depth(const TaggedMat& mat);
+  void color(const TaggedMat& mat);
+  void ir(const TaggedMat& mat);
+  void undistortedDepth(const TaggedMat& mat);
+  void registeredColor(const TaggedMat& mat);
+
 
 #ifdef WITH_PCL
   void pointCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);

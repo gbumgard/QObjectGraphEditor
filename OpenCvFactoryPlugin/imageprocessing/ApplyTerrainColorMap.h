@@ -1,6 +1,8 @@
 #ifndef APPLYTERRAINCOLORMAP_H
 #define APPLYTERRAINCOLORMAP_H
 
+#include "OpenCvFactoryPlugin.h"
+
 #include <QObject>
 
 #include <opencv2/core.hpp>
@@ -24,11 +26,11 @@ public:
 
 signals:
 
-  void out(const cv::Mat& mat);
+  void out(const TaggedMat& mat);
 
 public slots:
 
-  void in(const cv::Mat& mat);
+  void in(const TaggedMat& mat);
 
   void flip(bool enable);
 
