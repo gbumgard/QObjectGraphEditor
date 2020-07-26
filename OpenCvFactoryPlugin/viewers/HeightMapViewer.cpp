@@ -1,4 +1,4 @@
-#include "Mat3DViewer.h"
+#include "HeightMapViewer.h"
 #include "OpenCvFactoryPlugin.h"
 
 #include <QDebug>
@@ -7,7 +7,7 @@
 #include <QScreen>
 #include <QCheckBox>
 
-REGISTER_CLASS(Mat3DViewer)
+REGISTER_CLASS(HeightMapViewer)
 
 inline QImage mat_to_qimage_ref(cv::Mat &mat, QImage::Format format)
 {
@@ -61,7 +61,7 @@ inline QImage mat_to_qimage_cpy(cv::Mat const &mat, bool swap)
   return mat_to_qimage_ref(const_cast<cv::Mat&>(mat), swap).copy();
 }
 
-Mat3DViewer::Mat3DViewer(QObject *parent)
+HeightMapViewer::HeightMapViewer(QObject *parent)
   : QObject(parent)
   , _heightMap(":/maps/mountain")
   , _imageSize(_heightMap.width(),_heightMap.height())
@@ -132,17 +132,20 @@ Mat3DViewer::Mat3DViewer(QObject *parent)
 
 }
 
-Mat3DViewer::~Mat3DViewer() {
+HeightMapViewer::~HeightMapViewer() {
   _graph->close();
   delete _graph;
 }
 
-void Mat3DViewer::map(const cv::Mat& mat) {
+void HeightMapViewer::map(const MatEvent& event) {
 
-  _heightMap = mat_to_qimage_cpy(mat,true);
+  cv::Mat heightMat;
+  event.mat().convertTo(heightMat,CV_8UC1);
 
-  if (mat.size() != _imageSize) {
-    _imageSize = mat.size();
+  _heightMap = mat_to_qimage_cpy(heightMat,true);
+
+  if (event.mat().size() != _imageSize) {
+    _imageSize = event.mat().size();
     _graph->axisX()->setRange(0, _imageSize.width);
     _graph->axisZ()->setRange(0, _imageSize.height);
     _heightMapProxy->setValueRanges(0, _imageSize.width, 0, _imageSize.height);
@@ -150,13 +153,12 @@ void Mat3DViewer::map(const cv::Mat& mat) {
   _heightMapProxy->setHeightMap(_heightMap);
 }
 
-void Mat3DViewer::texture(const cv::Mat& mat) {
+void HeightMapViewer::texture(const MatEvent& mat) {
 
-  if (!mat.empty()) {
-    _texture = mat_to_qimage_cpy(mat,true);
+  if (!mat.mat().empty()) {
+    _texture = mat_to_qimage_cpy(mat.mat(),true);
     if (_enableTexture) {
       _heightMapSeries->setTexture(_texture);
     }
   }
-
 }

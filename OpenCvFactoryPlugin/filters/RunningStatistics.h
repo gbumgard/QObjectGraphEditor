@@ -33,7 +33,7 @@ public:
 
 public slots:
 
-  void in(const TaggedMat& taggedMat);
+  void in(const MatEvent& input);
 
   void min(qreal min) { _min  = min; clear(); }
 
@@ -43,13 +43,13 @@ public slots:
 
 signals:
 
-  void mean(const TaggedMat& mat);
+  void mean(const MatEvent& output);
 
-  void var(const TaggedMat& mat);
+  void var(const MatEvent& output);
 
-  void std(const TaggedMat& mat);
+  void std(const MatEvent& output);
 
-  void update(const TaggedMat& mat);
+  void update(const MatEvent& output);
 
 protected:
 

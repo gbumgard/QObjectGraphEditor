@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += sql
+QT       += sql widgets
 
 QT       -= gui
 
@@ -26,9 +26,17 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     Connection.cpp \
-    ObjectModel.cpp
+    ObjectModel.cpp \
+    SimpleObject.cpp \
+    ThreadedObject.cpp
 
 HEADERS += \
+  Constraints.h \
+  Event.h \
+  QVariantEvent.h \
+  SimpleObject.h \
+  ThreadedObject.h \
+  WidgetObject.h \
   objectmodel_global.h \
   ObjectFactory.h \
   Connection.h \

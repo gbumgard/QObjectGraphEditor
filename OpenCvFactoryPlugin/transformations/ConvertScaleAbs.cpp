@@ -20,10 +20,8 @@ void ConvertScaleAbs::offset(double offset) {
   _offset = offset;
 }
 
-void ConvertScaleAbs::in(const TaggedMat &taggedMat) {
-  if (!taggedMat.first.empty()) {
-    cv::Mat dst;
-    cv::convertScaleAbs(taggedMat.first, dst, _scale, _offset);
-    emit out(TaggedMat(dst,taggedMat.second));
-  }
+void ConvertScaleAbs::in(const MatEvent &event) {
+  cv::Mat output  ;
+  cv::convertScaleAbs(event.mat(), output, _scale, _offset);
+  emit out(MatEvent(output,event.timestamp()));
 }

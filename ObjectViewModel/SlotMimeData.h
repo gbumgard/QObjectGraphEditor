@@ -10,7 +10,7 @@ public:
 
   static const QString MIME_TYPE;
 
-  SlotMimeData(int objectId, int methodIndex, ObjectGraphEdge* edge);
+  SlotMimeData(const QUuid& objectId, const QString& methodSignature, ObjectGraphEdge* edge);
 
   QStringList formats() const override;
   bool hasFormat(const QString& mimeType) const override;

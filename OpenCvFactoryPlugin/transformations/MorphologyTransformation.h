@@ -1,11 +1,12 @@
 #ifndef MORPHOLOGYTRANSFORMATION_H
 #define MORPHOLOGYTRANSFORMATION_H
 
+#include "OpenCvFactoryPlugin.h"
+
 #include <QObject>
-#include <AbstractOpenCvObject.h>
 #include <opencv2/imgproc.hpp>
 
-class MorphologyTransformation : public AbstractOpenCvObject
+class MorphologyTransformation : public QObject
 {
 
   Q_OBJECT
@@ -70,19 +71,15 @@ public:
 
 public slots:
 
-  void in(const cv::Mat& mat);
+  void in(const MatEvent& input);
 
 signals:
 
-  void out(const cv::Mat& mat);
+  void out(const MatEvent& output);
 
 protected:
 
-  void update();
-
 private:
-
-  cv::Mat _input;
 
   Operation _operation;
   Shape _shape;

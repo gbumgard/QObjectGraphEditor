@@ -55,8 +55,8 @@ void DepthFilter::in(const cv::Mat &mat) {
   if (mat.empty()) return;
 
   cv::Mat sample;
-  if (mat.type() != CV_32F)
-    mat.convertTo(sample,CV_32F);
+  if (mat.type() != CV_64F)
+    mat.convertTo(sample,CV_64F);
   else
     sample = mat;
 
@@ -65,13 +65,14 @@ void DepthFilter::in(const cv::Mat &mat) {
 
     _size = sample.size();
 
-    _fastAverage = cv::Mat(_size,CV_64F);
-    _slowAverage = cv::Mat(_size,CV_64F);
+    //_fastAverage = cv::Mat(_size,CV_64F);
+    //_slowAverage = cv::Mat(_size,CV_64F);
     _slowVariance = cv::Mat(_size,CV_64F,cv::Scalar(0.0));
-    _filteredSample = cv::Mat(_size,CV_32F);
+    //_filteredSample = cv::Mat(_size,CV_64F);
 
-    sample.convertTo(_fastAverage,CV_64F);
-    sample.convertTo(_slowAverage,CV_64F);
+    sample.copyTo(_fastAverage);
+    sample.copyTo(_slowAverage);
+    sample.copyTo(_filteredSample);
 
     emit out(sample);
 
@@ -82,11 +83,11 @@ void DepthFilter::in(const cv::Mat &mat) {
 
   for (int row = 0; row < sample.rows; row++) {
 
-    float* sampleRow = sample.ptr<float>(row);
+    double* sampleRow = sample.ptr<double>(row);
     double* fastAverageRow = _fastAverage.ptr<double>(row);
     double* slowAverageRow = _slowAverage.ptr<double>(row);
     double* slowVarianceRow = _slowVariance.ptr<double>(row);
-    float* filteredRow = _filteredSample.ptr<float>(row);
+    double* filteredRow = _filteredSample.ptr<double>(row);
 
     for (int col = 0; col < sample.cols; col++) {
 
@@ -104,7 +105,7 @@ void DepthFilter::in(const cv::Mat &mat) {
       double slowVariance = slowDelta1 * slowDelta2;
       slowVarianceRow[col] = (1.0 - varianceGain) * slowVarianceRow[col] + varianceGain * slowVariance;
 
-      float filtered;
+      double filtered;
       double averageDelta = fabs(fastAverageRow[col] - slowAverageRow[col]);
 
       if (averageDelta*averageDelta > slowVarianceRow[col]) {
@@ -120,15 +121,17 @@ void DepthFilter::in(const cv::Mat &mat) {
     }
   }
 
+#if 0
   int sampleRow = 240, sampleCol = 320;
 
   std::cout << std::setprecision(6)
             << " sample=" << std::setw(8) << sample.at<float>(sampleRow,sampleCol)
-            << " filtered=" << std::setw(8) << _filteredSample.at<float>(sampleRow,sampleCol)
+            << " filtered=" << std::setw(8) << _filteredSample.at<double>(sampleRow,sampleCol)
             << " fast-mean=" << std::setw(8) << _fastAverage.at<double>(sampleRow, sampleCol)
             << " slow-mean=" << std::setw(8) << _slowAverage.at<double>(sampleRow, sampleCol)
             << " variance-mean=" << std::setw(10) << _slowVariance.at<double>(sampleRow, sampleCol)
             << std::endl << std::flush;
-
+#endif
   emit out(_filteredSample);
+  emit var(_slowVariance);
 }

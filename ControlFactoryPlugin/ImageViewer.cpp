@@ -13,11 +13,17 @@ ImageViewer::ImageViewer(QWidget *parent)
   setProperty("methodOffset",QWidget::staticMetaObject.methodOffset());
   setAutoFillBackground(false);
   setAttribute(Qt::WA_NoSystemBackground, true);
+  setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding);
 }
 
 void ImageViewer::in(const QImage& image) {
   _image = image;
-  update();
+  if (image.size() != _imageSize) {
+    _imageSize = _image.size();
+    setMinimumSize(_imageSize.width(),_imageSize.height());
+    adjustSize();
+  }
+  repaint();
 }
 
 void ImageViewer::paintEvent(QPaintEvent* /*event*/)

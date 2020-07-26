@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui sql
+QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -53,7 +53,7 @@ exists($$OUT_PWD/db) {
   message("db directory exists")
 }
 else {
-  QMAKE_POST_LINK += mkdir -f $$OUT_PWD/db
+  QMAKE_POST_LINK += mkdir -p $$OUT_PWD/db
 }
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../ObjectViewModel/release/ -lObjectViewModel

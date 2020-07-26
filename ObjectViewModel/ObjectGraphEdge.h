@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QGraphicsPathItem>
+#include <QUuid>
 
 class ObjectGraphEdge : public QObject, public QGraphicsPathItem
 {
@@ -11,7 +12,7 @@ class ObjectGraphEdge : public QObject, public QGraphicsPathItem
 
 public:
 
-  ObjectGraphEdge(int connectionId = -1);
+  ObjectGraphEdge(const QUuid& connectionUuid = QUuid());
 
   virtual ~ObjectGraphEdge();
 
@@ -20,7 +21,8 @@ public:
   const QPointF& signalPosition() const { return _signalPosition; }
   const QPointF& slotPosition() const { return _slotPosition; }
 
-  int connectionId() const { return _connectionId; }
+  QUuid uuid() const { return connectionUuid(); }
+  QUuid connectionUuid() const { return _connectionUuid; }
 
 public slots:
 
@@ -42,7 +44,7 @@ private:
 
   QPointF _signalPosition;
   QPointF _slotPosition;
-  int _connectionId;
+  QUuid _connectionUuid;
 
 };
 

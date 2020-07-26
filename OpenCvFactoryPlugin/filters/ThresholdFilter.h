@@ -58,14 +58,14 @@ public:
 
 public slots:
 
-  void in(const TaggedMat& taggedMat);
+  void in(const MatEvent& event);
 
   void threshold(double threshold);
   void maximum(double maximum);
 
 signals:
 
-  void out(const TaggedMat& mat);
+  void out(const MatEvent& mat);
 
 protected:
 

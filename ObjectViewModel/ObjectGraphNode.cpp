@@ -16,7 +16,8 @@
 #include <QMarginsF>
 #include <QRgba64>
 #include <QDrag>
-
+#include <QString>
+#include <QVector>
 #include <QDebug>
 
 #include "GraphicsItemMimeData.h"
@@ -32,16 +33,23 @@
 #include "SignalConnectionPoint.h"
 
 #include "SizeGripper.h"
+#include <sstream>
+#include <vector>
 
 ObjectGraphNode::ObjectGraphNode(QObject* object, QGraphicsItem* parent)
   : QGraphicsWidget(parent)
   , _object(object)
   , _proxy(nullptr)
+  , _statusCode(0)
 {
-  setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+
+  qDebug() << "\n" << Q_FUNC_INFO;
+
+  setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable | ItemSendsScenePositionChanges);
   setAttribute(Qt::WA_DeleteOnClose);
 
   connect(_object,&QObject::objectNameChanged,this,&ObjectGraphNode::onObjectNameChanged);
+  connect(_object,&QObject::destroyed,this,&ObjectGraphNode::onObjectDestroyed);
 
   _pen = QPen(Qt::white,2);
   _brush = QBrush(Qt::gray);
@@ -50,54 +58,26 @@ ObjectGraphNode::ObjectGraphNode(QObject* object, QGraphicsItem* parent)
 
   setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
   buildNode();
+  setZValue(ObjectGraph::topNodeZValue());
   updateNodeLayout();
 }
 
 ObjectGraphNode::~ObjectGraphNode() {
+  qDebug() << "\n" << Q_FUNC_INFO;
   if (scene()) scene()->removeItem(this);
-}
-
-bool ObjectGraphNode::read(QDataStream &in) {
-
-  QMap<int,QVariant> nodeProperties;
-  in >> nodeProperties;
-
-  const QMetaObject* metaObj = metaObject();
-  for (auto index : nodeProperties.keys()) {
-    metaObj->property(index).write(this,nodeProperties[index]);
-  }
-  return true;
-}
-
-bool ObjectGraphNode::write(QDataStream &out) const {
-  QMap<int,QVariant> nodeProperties;
-  const QMetaObject* metaObj = metaObject();
-  for (int i = 0; i < metaObj->propertyCount(); i++) {
-    QMetaProperty property = metaObj->property(i);
-    if (property.userType() > QMetaType::UnknownType &&
-        property.userType() < QMetaType::User &&
-        property.isValid() &&
-        property.isReadable() &&
-        property.isWritable() &&
-        property.isStored()) {
-      nodeProperties.insert(i,property.read(this));
-    }
-  }
-  out << nodeProperties;
-  return true;
 }
 
 
 ObjectGraph* ObjectGraphNode::graph() const {
-  return dynamic_cast<ObjectGraph*>(scene());
+  return _graph;
 }
 
 ObjectModel* ObjectGraphNode::model() const {
   return graph()->model();
 }
 
-int ObjectGraphNode::objectId() const {
-  return model()->getObjectId(object());
+QUuid ObjectGraphNode::objectUuid() const {
+  return model()->objectUuid(_object);
 }
 
 void ObjectGraphNode::setPen(const QPen& pen) {
@@ -121,30 +101,71 @@ void ObjectGraphNode::setCaption(const QString& title) {
   }
 }
 
-void ObjectGraphNode::setStatus(const QString& status) {
-  if (_status->toHtml() != status) {
-    _status->setHtml(status);
+void ObjectGraphNode::setStatus(int statusCode, const QString& statusMessage) {
+  if (_statusCode != statusCode || _status->toPlainText() != statusMessage) {
+    _statusCode = statusCode;
+
+    QString message("<span style='color:%1;'>%2</span>");
+    if (_statusCode == ObjectModel::STATUS_OK) {
+      _status->setHtml(message.arg("lime").arg(statusMessage));
+      _rect->setBrush(QBrush(QRgba64::fromRgba(0x80,0x80,0x80,0xCC)));
+    }
+    else {
+      _status->setHtml(message.arg("yellow").arg(statusMessage));
+      _rect->setBrush(QBrush(QRgba64::fromRgba(0xC0,0x80,0x80,0xCC)));
+    }
+
+
     updateNodeLayout();
   }
+}
+
+void  ObjectGraphNode::contextMenuEvent(QGraphicsSceneContextMenuEvent* e) {
+  qDebug() << Q_FUNC_INFO << e;
+  //QMenu* menu = new QMenu;
+  //QAction* helpAction = menu->addAction("help");
+  QMenu menu;
+  QAction* helpAction = menu.addAction("Context Help",this,SLOT(onContextHelp()));
+  (void)helpAction;
+  menu.exec(e->screenPos());
+}
+
+void ObjectGraphNode::onContextHelp() const {
+  qDebug() << Q_FUNC_INFO;
+}
+
+void ObjectGraphNode::onObjectDestroyed() {
+  qDebug() << Q_FUNC_INFO;
+  _object = nullptr;
 }
 
 void ObjectGraphNode::onObjectNameChanged(const QString& name) {
   setCaption(name);
 }
 
-void ObjectGraphNode::bindToSignalConnectionPoint(int signalIndex, ObjectGraphEdge* edge) {
-  if (_signalConnectionPoints.contains(signalIndex)) {
-    SignalConnectionPoint* cp = _signalConnectionPoints[signalIndex];
+void ObjectGraphNode::bindToSignalConnectionPoint(const QString& signalSignature, ObjectGraphEdge* edge) {
+
+  qDebug() << Q_FUNC_INFO << signalSignature;
+
+  if (_signalConnectionPoints.contains(signalSignature)) {
+
+    SignalConnectionPoint* cp = _signalConnectionPoints[signalSignature];
     edge->setSignalPosition(cp->scenePos());
     connect(cp,&ConnectionPoint::scenePositionChanged,edge,&ObjectGraphEdge::setSignalPosition);
+
   }
 }
 
-void ObjectGraphNode::bindToSlotConnectionPoint(int slotIndex, ObjectGraphEdge* edge) {
-  if (_slotConnectionPoints.contains(slotIndex)) {
-    SlotConnectionPoint* cp = _slotConnectionPoints[slotIndex];
+void ObjectGraphNode::bindToSlotConnectionPoint(const QString &slotSignature, ObjectGraphEdge* edge) {
+
+  qDebug() << Q_FUNC_INFO << slotSignature;
+
+  if (_slotConnectionPoints.contains(slotSignature)) {
+
+    SlotConnectionPoint* cp = _slotConnectionPoints[slotSignature];
     edge->setSlotPosition(cp->scenePos());
     connect(cp,&ConnectionPoint::scenePositionChanged,edge,&ObjectGraphEdge::setSlotPosition);
+
   }
 }
 
@@ -159,6 +180,8 @@ bool ObjectGraphNode::resizable() const {
 }
 
 void ObjectGraphNode::updateNodeLayout() {
+
+  //qDebug() << Q_FUNC_INFO;
 
   /*
    *     ++--------------------------------------++
@@ -315,6 +338,17 @@ void ObjectGraphNode::updateNodeLayout() {
 
   qreal methodTextOffsetY = penSpacing + 2 * textSpacingY + lineHeight;
 
+  if (_slotMethodMap.count()) {
+    QPointF position(boxLeft + padRadius + penSpacing + textSpacingX, methodTextOffsetY);
+    for (auto metaMethod : _slotMethodMap) {
+      auto textItem =_slotTextItems[metaMethod.methodSignature()];
+      textItem->setBrush(Qt::white);
+      textItem->setPos(position);
+      position = QPointF(position.x(),position.y()+lineHeight);
+    }
+  }
+
+#if 0
   if (_slotTextItems.count()) {
     QPointF position(boxLeft + padRadius + penSpacing + textSpacingX, methodTextOffsetY);
     for (auto textItem : _slotTextItems) {
@@ -323,7 +357,20 @@ void ObjectGraphNode::updateNodeLayout() {
       position = QPointF(position.x(),position.y()+lineHeight);
     }
   }
+#endif
 
+  if (_signalMethodMap.count()) {
+    QPointF position(boxRight - padRadius - penSpacing - textSpacingX, methodTextOffsetY);
+    for (auto metaMethod : _signalMethodMap) {
+      auto textItem =_signalTextItems[metaMethod.methodSignature()];
+      qreal width = textItem->boundingRect().size().width();
+      textItem->setBrush(Qt::white);
+      textItem->setPos(QPointF(position.x()-width,position.y()));
+      position = QPointF(position.x(),position.y()+lineHeight);
+    }
+  }
+
+#if 0
   if (_signalTextItems.count()){
     QPointF position(boxRight - padRadius - penSpacing - textSpacingX, methodTextOffsetY);
     for (auto textItem : _signalTextItems) {
@@ -333,7 +380,20 @@ void ObjectGraphNode::updateNodeLayout() {
       position = QPointF(position.x(),position.y()+lineHeight);
     }
   }
+#endif
 
+  qreal methodPadOffsetY = penSpacing + 2 * textSpacingY + lineHeight + (lineHeight-padRadius)/2;
+  if (_slotConnectionPoints.count()) {
+    QPointF position(boxLeft,methodPadOffsetY);
+    for (auto metaMethod : _slotMethodMap) {
+      auto connectionPoint = _slotConnectionPoints[metaMethod.methodSignature()];
+      connectionPoint->setPen(pen());
+      connectionPoint->setBrush(brush());
+      connectionPoint->setPos(position);
+      position = QPointF(position.x(),position.y()+lineHeight);
+    }
+  }
+#if 0
   qreal methodPadOffsetY = penSpacing + 2 * textSpacingY + lineHeight + (lineHeight-padRadius)/2;
   if (_slotConnectionPoints.count()) {
     QPointF position(boxLeft,methodPadOffsetY);
@@ -344,7 +404,20 @@ void ObjectGraphNode::updateNodeLayout() {
       position = QPointF(position.x(),position.y()+lineHeight);
     }
   }
+#endif
 
+  if (_signalConnectionPoints.count()){
+    QPointF position(boxRight,methodPadOffsetY);
+    for (auto metaMethod : _signalMethodMap) {
+      auto connectionPoint = _signalConnectionPoints[metaMethod.methodSignature()];
+      connectionPoint->setPen(pen());
+      connectionPoint->setBrush(brush());
+      connectionPoint->setPos(position);
+      position = QPointF(position.x(),position.y()+lineHeight);
+    }
+  }
+
+#if 0
   if (_signalConnectionPoints.count()){
     QPointF position(boxRight,methodPadOffsetY);
     for (auto connectionPoint : _signalConnectionPoints) {
@@ -354,6 +427,8 @@ void ObjectGraphNode::updateNodeLayout() {
       position = QPointF(position.x(),position.y()+lineHeight);
     }
   }
+#endif
+
   prepareGeometryChange();
   updateBoundingRect();
   updateShape();
@@ -382,6 +457,77 @@ void ObjectGraphNode::buildNode() {
     classInfo.insert(metaClassInfo.name(),metaClassInfo.value());
   }
 
+  // Use QMetaObject.methodOffset for derived class unless a dynamic property specifies otherwise
+  int methodOffset = metaObject->methodOffset();
+  QVariant v = _object->property("methodOffset");
+  if (v.isValid() && v.toInt() < metaObject->methodCount()) {
+    methodOffset = v.toInt();
+  }
+
+  if (classInfo.keys().contains("slot-order")) {
+    std::string slotList = classInfo["slot-order"].toUtf8().constData();
+    if (!slotList.empty()) {
+      qDebug() << "slot-order" << slotList.c_str();
+      std::stringstream tokenizer(slotList);
+      std::string token;
+      while(std::getline(tokenizer,token,',')) {
+        int index = metaObject->indexOfSlot(token.c_str());
+        if (index != -1 && metaObject->method(index).access() == QMetaMethod::Public) {
+          qDebug() << "adding" << index << token.c_str();
+          _slotMethodMap.push_back(metaObject->method(index));
+        }
+        else {
+          qWarning() << "CLASSINFO slot-order entry" << token.c_str() << "is undefined or inaccessible";
+        }
+      }
+    }
+  }
+  else {
+    for (int index = methodOffset; index < metaObject->methodCount(); index++) {
+      QMetaMethod method = metaObject->method(index);
+      if (method.methodType() == QMetaMethod::Slot && method.access() == QMetaMethod::Public) {
+        _slotMethodMap.push_back(method);
+      }
+    }
+  }
+
+  if (classInfo.keys().contains("signal-order")) {
+    std::string signalList = classInfo["signal-order"].toUtf8().constData();
+    if (!signalList.empty()) {
+      qDebug() << "signal-order" << signalList.c_str();
+      std::stringstream tokenizer(signalList);
+      std::string token;
+      while(std::getline(tokenizer,token,',')) {
+        int index = metaObject->indexOfSignal(token.c_str());
+        if (index != -1 && metaObject->method(index).access() == QMetaMethod::Public) {
+          qDebug() << "adding" << index << token.c_str();
+          _signalMethodMap.push_back(metaObject->method(index));
+        }
+        else {
+          qWarning() << "CLASSINFO signal-order entry" << token.c_str() << "is undefined or inaccessible";
+        }
+      }
+    }
+  }
+  else {
+    for (int index = methodOffset; index < metaObject->methodCount(); index++) {
+      QMetaMethod method = metaObject->method(index);
+      if (method.methodType() == QMetaMethod::Signal && method.access() == QMetaMethod::Public) {
+        _signalMethodMap.push_back(method);
+      }
+    }
+  }
+
+  qDebug() << "exposing the following slots";
+  for (auto metaMethod : _slotMethodMap) {
+    qDebug() << metaMethod.methodSignature();
+  }
+
+  qDebug() << "exposing the following signals";
+  for (auto metaMethod : _signalMethodMap) {
+    qDebug() << metaMethod.methodSignature();
+  }
+
   _rect = new QGraphicsPathItem(this);
   _rect->setPen(QPen(Qt::white,2));
   _rect->setBrush(QBrush(QRgba64::fromRgba(0x80,0x80,0x80,0xCC)));
@@ -407,11 +553,33 @@ void ObjectGraphNode::buildNode() {
     connect(_proxy,&QGraphicsProxyWidget::widthChanged,this,&ObjectGraphNode::onProxySizeChanged);
   }
 
-  // Use QMetaObject.methodOffset for derived class unless a dynamic property specifies otherwise
-  int methodOffset = metaObject->methodOffset();
-  //QVariant v = _object->property("methodOffset");
-  //if (v.isValid()) methodOffset = v.toInt();
+  for (auto metaMethod : _slotMethodMap) {
+    QString methodSignature = metaMethod.methodSignature();
 
+    SlotConnectionPoint* connectionPoint = new SlotConnectionPoint(metaMethod,this);
+    connectionPoint->setData(0,methodSignature);
+    _slotConnectionPoints[methodSignature] = connectionPoint;
+
+    QGraphicsSimpleTextItem* textItem = new QGraphicsSimpleTextItem(metaMethod.name(),this);
+    textItem->setPen(QPen(Qt::NoPen));
+    textItem->setBrush(Qt::white);
+    _slotTextItems[methodSignature] = textItem;
+  }
+
+  for (auto metaMethod : _signalMethodMap) {
+    QString methodSignature = metaMethod.methodSignature();
+
+    SignalConnectionPoint* connectionPoint = new SignalConnectionPoint(metaMethod,this);
+    connectionPoint->setData(0,methodSignature);
+    _signalConnectionPoints[methodSignature] = connectionPoint;
+
+    QGraphicsSimpleTextItem* textItem = new QGraphicsSimpleTextItem(metaMethod.name(),this);
+    textItem->setPen(QPen(Qt::NoPen));
+    textItem->setBrush(Qt::white);
+    _signalTextItems[methodSignature] = textItem;
+  }
+
+#if 0
   for (int i = methodOffset; i < metaObject->methodCount(); i++) {
 
     QMetaMethod metaMethod = metaObject->method(i);
@@ -423,12 +591,12 @@ void ObjectGraphNode::buildNode() {
 
         SlotConnectionPoint* connectionPoint = new SlotConnectionPoint(metaMethod,this);
         connectionPoint->setData(0,metaMethod.methodSignature());
-        _slotConnectionPoints.insert(i,connectionPoint);
+        _slotConnectionPoints.insert(metaMethod.methodSignature(),connectionPoint);
 
         QGraphicsSimpleTextItem* textItem = new QGraphicsSimpleTextItem(name,this);
         textItem->setPen(QPen(Qt::NoPen));
         textItem->setBrush(Qt::white);
-        _slotTextItems.insert(i,textItem);
+        //_slotTextItems.insert(metaMethod.methodSignature(),textItem);
       }
       else if (metaMethod.methodType() == QMetaMethod::Signal) {
 
@@ -436,15 +604,16 @@ void ObjectGraphNode::buildNode() {
 
         SignalConnectionPoint* connectionPoint = new SignalConnectionPoint(metaMethod,this);
         connectionPoint->setData(0,metaMethod.methodSignature());
-        _signalConnectionPoints.insert(i,connectionPoint);
+        _signalConnectionPoints.insert(metaMethod.methodSignature(),connectionPoint);
 
         QGraphicsSimpleTextItem* textItem = new QGraphicsSimpleTextItem(name,this);
         textItem->setPen(QPen(Qt::NoPen));
         textItem->setBrush(Qt::white);
-        _signalTextItems.insert(i,textItem);
+        _signalTextItems.insert(metaMethod.methodSignature(),textItem);
       }
     }
   }
+#endif
 }
 
 void ObjectGraphNode::updateBoundingRect() {
@@ -479,7 +648,6 @@ void ObjectGraphNode::updateShape() {
 }
 
 void ObjectGraphNode::onProxySizeChanged() {
-  qDebug() << Q_FUNC_INFO;
   updateNodeLayout();
 }
 
@@ -523,22 +691,42 @@ void ObjectGraphNode::closeEvent(QCloseEvent *event) {
 }
 
 QVariant ObjectGraphNode::itemChange(GraphicsItemChange change, const QVariant &value) {
-  qDebug() << Q_FUNC_INFO << change << value;
-  if (change == QGraphicsItem::ItemSelectedChange) {
-    qDebug() << (value.toBool() ? "selected" : "not selected");
-    QPen pen(QColor(value.toBool() ? "orange" : "white"), 2);
 
-    setPen(pen);
-    _rect->setPen(pen);
+  qDebug() << "\n" << Q_FUNC_INFO << change << value;
 
-    for (auto connectionPoint : _slotConnectionPoints) {
-      connectionPoint->setPen(pen);
-    }
-    for (auto connectionPoint : _signalConnectionPoints) {
-      connectionPoint->setPen(pen);
-    }
+  switch (change) {
 
-    update();
+    case QGraphicsItem::ItemSelectedChange:
+      {
+        QPen pen(QColor(value.toBool() ? "orange" : "white"), 2);
+
+        setPen(pen);
+        _rect->setPen(pen);
+
+        for (auto connectionPoint : _slotConnectionPoints) {
+          connectionPoint->setPen(pen);
+        }
+        for (auto connectionPoint : _signalConnectionPoints) {
+          connectionPoint->setPen(pen);
+        }
+
+        update();
+      }
+      break;
+
+    case QGraphicsItem::ItemSceneHasChanged:
+      {
+
+        QGraphicsScene *graph = scene();
+
+        _graph = dynamic_cast<ObjectGraph*>(graph);
+      }
+
+      break;
+
+    default:
+
+      break;
   }
 
   return QGraphicsObject::itemChange(change,value);
@@ -550,20 +738,28 @@ void ObjectGraphNode::resizeEvent(QGraphicsSceneResizeEvent *event) {
 }
 
 void ObjectGraphNode::mousePressEvent(QGraphicsSceneMouseEvent *event) {
+
+  qDebug() << "\n" << Q_FUNC_INFO;
+
   if (event->button() == Qt::LeftButton) {
-    setZValue(ObjectGraph::topZValue());
+    setZValue(ObjectGraph::topNodeZValue());
   }
+
   QGraphicsObject::mousePressEvent(event);
 }
 
-#if 0
-void ObjectGraphNode::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
-  QGraphicsObject::mouseMoveEvent(event);
-}
 
+#if 0
 void ObjectGraphNode::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
+
+  qDebug() << "\n" << Q_FUNC_INFO;
+
   event->ignore();
   QGraphicsObject::mouseReleaseEvent(event);
+}
+
+void ObjectGraphNode::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
+  QGraphicsObject::mouseMoveEvent(event);
 }
 
 void ObjectGraphNode::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {

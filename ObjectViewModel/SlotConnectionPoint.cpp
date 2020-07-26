@@ -28,7 +28,7 @@ void SlotConnectionPoint::startDrag(QGraphicsSceneMouseEvent *event) {
   edge->setSlotPosition(scenePos());
   scene()->addItem(edge);
   QDrag *drag = new QDrag(event->widget());
-  SlotMimeData* mimeData = new SlotMimeData(objectId(),methodIndex(),edge);
+  SlotMimeData* mimeData = new SlotMimeData(objectUuid(),_metaMethod.methodSignature(),edge);
   drag->setMimeData(mimeData);
   drag->exec();
   scene()->removeItem(edge);
@@ -41,11 +41,11 @@ void SlotConnectionPoint::dragEnterEvent(QGraphicsSceneDragDropEvent *event) {
   if (event->mimeData()->hasFormat(SignalMimeData::MIME_TYPE)) {
     const SignalMimeData* mimeData = dynamic_cast<const SignalMimeData*>(event->mimeData());
     if (mimeData) {
-      qDebug() << Q_FUNC_INFO << mimeData->objectId() << mimeData->methodIndex() << objectId() << methodIndex();
-      if (objectNode()->model()->canConnect(mimeData->objectId(),
-                                            mimeData->methodIndex(),
-                                            objectId(),
-                                            methodIndex())) {
+      qDebug() << Q_FUNC_INFO << mimeData->objectUuid() << mimeData->methodSignature() << objectUuid() << _metaMethod.methodSignature();
+      if (objectNode()->model()->canConnect(mimeData->objectUuid(),
+                                            mimeData->methodSignature(),
+                                            objectUuid(),
+                                            _metaMethod.methodSignature())) {
         qDebug() << "CAN CONNECT";
         setBrush(QBrush(Qt::green));
       }
@@ -66,14 +66,14 @@ void SlotConnectionPoint::dropEvent(QGraphicsSceneDragDropEvent *event) {
   if (event->mimeData()->hasFormat(SignalMimeData::MIME_TYPE)) {
     const SignalMimeData* mimeData = dynamic_cast<const SignalMimeData*>(event->mimeData());
     if (mimeData) {
-      if (objectNode()->model()->canConnect(mimeData->objectId(),
-                                            mimeData->methodIndex(),
-                                            objectId(),
-                                            methodIndex())) {
-        objectNode()->graph()->addEdge(mimeData->objectId(),
-                                       mimeData->methodIndex(),
-                                       objectId(),
-                                       methodIndex());
+      if (objectNode()->model()->canConnect(mimeData->objectUuid(),
+                                            mimeData->methodSignature(),
+                                            objectUuid(),
+                                            _metaMethod.methodSignature())) {
+        objectNode()->graph()->addEdgeAction(mimeData->objectUuid(),
+                                             mimeData->methodSignature(),
+                                             objectUuid(),
+                                             _metaMethod.methodSignature());
         event->acceptProposedAction();
         return;
       }

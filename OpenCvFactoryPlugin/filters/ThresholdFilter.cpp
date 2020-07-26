@@ -17,11 +17,11 @@ ThresholdFilter::ThresholdFilter(QObject *parent)
   _logcat.setEnabled(QtInfoMsg,false);
 }
 
-void ThresholdFilter::in(const TaggedMat &taggedMat) {
+void ThresholdFilter::in(const MatEvent &event) {
   qCDebug(_logcat) << Q_FUNC_INFO;
   cv::Mat dst;
-  cv::threshold(taggedMat.first,dst,_threshold,_maximum, _filterType);
-  emit out(TaggedMat(dst,taggedMat.second));
+  cv::threshold(event.mat(),dst,_threshold,_maximum, _filterType);
+  emit out(MatEvent(dst,event.timestamp()));
 }
 
 void ThresholdFilter::setFilterType(FilterType filterType) {

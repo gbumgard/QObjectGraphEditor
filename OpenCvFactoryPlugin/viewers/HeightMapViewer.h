@@ -1,6 +1,8 @@
 #ifndef Mat3DViewer_H
 #define Mat3DViewer_H
 
+#include "OpenCvFactoryPlugin.h"
+
 #include <QWidget>
 #include <QGridLayout>
 #include <QMessageBox>
@@ -15,7 +17,7 @@
 
 using namespace QtDataVisualization;
 
-class Mat3DViewer : public QObject
+class HeightMapViewer : public QObject
 {
   Q_OBJECT
 
@@ -38,9 +40,9 @@ public:
 
   Q_ENUM(DrawMode)
 
-  Q_INVOKABLE explicit Mat3DViewer(QObject* parent = nullptr);
+  Q_INVOKABLE explicit HeightMapViewer(QObject* parent = nullptr);
 
-  virtual ~Mat3DViewer();
+  virtual ~HeightMapViewer();
 
   QString caption() const {
     return QObject::objectName();
@@ -70,8 +72,8 @@ public:
 
 public slots:
 
-  void map(const cv::Mat& image);
-  void texture(const cv::Mat& image);
+  void map(const MatEvent& image);
+  void texture(const MatEvent& image);
 
 private:
 

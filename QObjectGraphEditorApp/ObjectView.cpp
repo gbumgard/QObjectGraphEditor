@@ -1,29 +1,45 @@
 #include "ObjectView.h"
+
 #include <QStyle>
 #include <QIcon>
 #include <QMimeData>
 #include <QMetaObject>
 #include <QMetaProperty>
 #include <QGraphicsSceneEvent>
+#include <QGraphicsItem>
 #include <QGraphicsSceneDragDropEvent>
+#include <QOpenGLWidget>
 
 #include <QDebug>
 #include <math.h>
 
+#include "ObjectGraphNode.h"
+
 ObjectView::ObjectView(QWidget* parent)
   : QGraphicsView(parent)
-  , _numScheduledScalings(0)
-  , _scaleSteps(0.0)
   , _recenterButton(new QToolButton(this))
 {
   connect(_recenterButton,&QToolButton::pressed,this,&ObjectView::onRecenterPressed);
+  connect(this,&ObjectView::rubberBandChanged,this,&ObjectView::onRubberBandChanged);
   _recenterButton->setIcon(_recenterButton->style()->standardIcon(QStyle::SP_TitleBarNormalButton));
   setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+  //QOpenGLWidget* glWidget = new QOpenGLWidget(this);
+  //QSurfaceFormat format;
+  //format.setSamples(4);
+  //glWidget->setFormat(format);
+  //setViewport(glWidget);
+  //setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+  //this->update();
+
 }
 
 ObjectView::ObjectView(QGraphicsScene* scene, QWidget* parent)
   : QGraphicsView(scene,parent)
 {
+
+}
+
+ObjectView::~ObjectView() {
 
 }
 
@@ -62,6 +78,7 @@ bool ObjectView::write(QDataStream &out) const {
         property.isReadable() &&
         property.isWritable() &&
         property.isStored()) {
+      qDebug() << metaObj->className() << property.name() << property.typeName();
       viewProperties.insert(i,property.read(this));
     }
   }
@@ -85,6 +102,7 @@ void ObjectView::wheelEvent(QWheelEvent* event)
   setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
 
   QPoint numDegrees = event->angleDelta();
+
   static const double stepScale = 1.15;
 
   if (!numDegrees.isNull()) {
@@ -100,38 +118,67 @@ void ObjectView::wheelEvent(QWheelEvent* event)
   }
 }
 
-void ObjectView::mouseMoveEvent(QMouseEvent *event) {
-  //qDebug() << Q_FUNC_INFO << event->type() << this->mapToScene(event->pos());
-  QGraphicsView::mouseMoveEvent(event);
+void ObjectView::onRubberBandChanged(QRect rubberBandRect, QPointF fromScenePoint, QPointF toScenePoint) {
+  qDebug() << Q_FUNC_INFO << rubberBandRect << fromScenePoint << toScenePoint;
+  if (!rubberBandRect.isNull()) {
+    _selectionArea = rubberBandRect;
+  }
+}
+
+void ObjectView::contextMenuEvent(QContextMenuEvent *event) {
+  qDebug() << Q_FUNC_INFO << event;
+  QGraphicsView::contextMenuEvent(event);
 }
 
 void ObjectView::mousePressEvent(QMouseEvent *event) {
-  //qDebug() << Q_FUNC_INFO << event->type() << this->mapToScene(event->pos());
+
+  qDebug() << "\nPRESS" << Q_FUNC_INFO << event->type() << this->mapToScene(event->pos());
+
+  if (event->button() == Qt::LeftButton && event->modifiers().testFlag(Qt::ControlModifier)) {
+    setDragMode(QGraphicsView::RubberBandDrag);
+  }
+
   QGraphicsView::mousePressEvent(event);
 }
 
 void ObjectView::mouseReleaseEvent(QMouseEvent *event) {
-  //qDebug() << Q_FUNC_INFO << event->type() << this->mapToScene(event->pos());
+
+  qDebug() << "\nRELEASE" << Q_FUNC_INFO << event->type() << this->mapToScene(event->pos());
+
   QGraphicsView::mouseReleaseEvent(event);
-}
 
-void ObjectView::dragEnterEvent(QDragEnterEvent *event) {
-  //qDebug() << Q_FUNC_INFO << event->type() << this->mapToScene(event->pos());
-  QGraphicsView::dragEnterEvent(event);
-}
+  if (event->button() == Qt::LeftButton) {
 
-void ObjectView::dragLeaveEvent(QDragLeaveEvent *event) {
-  //qDebug() << Q_FUNC_INFO << event->type();
-  QGraphicsView::dragLeaveEvent(event);
-}
+    if (event->modifiers().testFlag(Qt::ControlModifier)) {
 
-void ObjectView::dropEvent(QDropEvent *event) {
-  //qDebug() << Q_FUNC_INFO << event->type() << mapToScene(event->pos()) << event->mimeData()->formats();
-  QGraphicsView::dropEvent(event);
-}
+      // QGraphicsView will have selected all items in the rubber-band selection box.
+      // We want to deselect the items if the SHIFT key was also pressed along with CTRL.
 
-void ObjectView::dragMoveEvent(QDragMoveEvent *event) {
-  //qDebug() << Q_FUNC_INFO << event->type() <<  mapToScene(event->pos()) << event->mimeData()->formats();
-  QGraphicsView::dragMoveEvent(event);
+      if (!_selectionArea.isNull()) {
+
+        bool select = !event->modifiers().testFlag(Qt::ShiftModifier);
+
+        QList<QGraphicsItem*> enclosedItems = items(_selectionArea,Qt::ContainsItemShape);
+
+        for (auto item : enclosedItems) {
+
+          ObjectGraphNode* node = dynamic_cast<ObjectGraphNode*>(item);
+
+          if (node) {
+            qDebug() << "node" << node->uuid() << "select is" << select;
+            node->setSelected(select);
+          }
+
+        }
+      }
+    }
+  }
+
+  // The drag mode must be restored AFTER the mouse event has been processed
+  // in the QGraphicsView::mouseReleaseEvent method. If not, the items within
+  // the selection box will be deselected when the mode is changed.
+
+  setDragMode(QGraphicsView::ScrollHandDrag);
+
 }
 

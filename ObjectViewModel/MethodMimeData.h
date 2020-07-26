@@ -2,6 +2,7 @@
 #define METHODMIMEDATA_H
 
 #include <QMimeData>
+#include <QUuid>
 
 class ObjectModel;
 class ObjectGraphEdge;
@@ -12,18 +13,18 @@ public:
 
   virtual ~MethodMimeData();
 
-  int objectId() const { return _objectId; }
-  int methodIndex() const { return _methodIndex; }
+  QUuid objectUuid() const { return _objectUuid; }
+  QString methodSignature() const { return _methodSignature; }
   ObjectGraphEdge* edge() const { return _edge; }
 
 protected:
 
-  MethodMimeData(int objectId, int methodIndex, ObjectGraphEdge* edge);
+  MethodMimeData(const QUuid& objectUuid, const QString& methodSignature, ObjectGraphEdge* edge);
 
 private:
 
-  int _objectId;
-  int _methodIndex;
+  QUuid _objectUuid;
+  QString _methodSignature;
   ObjectGraphEdge* _edge;
 
 };

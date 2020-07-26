@@ -12,6 +12,8 @@ class ImageViewer : public QWidget
   Q_CLASSINFO("class-alias","Image Viewer")
   Q_CLASSINFO("directory","Qt/Viewers")
 
+  Q_PROPERTY(QString caption READ caption WRITE setCaption)
+
 public:
 
   Q_INVOKABLE explicit ImageViewer(QWidget* parent = nullptr);
@@ -20,6 +22,14 @@ public:
 
   QSize sizeHint() const {
     return _image.size();
+  }
+
+  QString caption() const {
+    return QObject::objectName();
+  }
+
+  void setCaption(const QString& caption) {
+    QObject::setObjectName(caption);
   }
 
 public slots:
@@ -33,6 +43,7 @@ protected:
 private:
 
   QImage _image;
+  QSize _imageSize;
 
 };
 

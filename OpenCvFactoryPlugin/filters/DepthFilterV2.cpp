@@ -60,21 +60,19 @@ void DepthFilterV2::reset() {
   _average = 0.0;
 }
 
-void DepthFilterV2::in(const TaggedMat &mat) {
-
-  if (mat.first.empty()) return;
+void DepthFilterV2::in(const MatEvent &input) {
 
   cv::Mat sample;
-  if (mat.first.type() != CV_64F)
-    mat.first.convertTo(sample,CV_64F);
+  if (input.mat().type() != CV_64F)
+    input.mat().convertTo(sample,CV_64F);
   else
-    sample = mat.first;
+    sample = input.mat();
 
-  cv::Mat aboveMinMask = mat.first >= _min;
-  cv::Mat belowMaxMask = mat.first <= _max;
+  cv::Mat aboveMinMask = input.mat() >= _min;
+  cv::Mat belowMaxMask = input.mat() <= _max;
   cv::Mat mask = aboveMinMask & belowMaxMask;
 
-  emit msk(TaggedMat(mask,mat.second));
+  emit msk(MatEvent(mask,input.timestamp()));
 
   // First sample is simply queued and emitted.
   if (sample.size() != _average.size()) {
@@ -87,18 +85,13 @@ void DepthFilterV2::in(const TaggedMat &mat) {
     _slowVariance = cv::Mat(sample.size(),CV_64F,cv::Scalar(0.0));
     _fastVariance = cv::Mat(sample.size(),CV_64F,cv::Scalar(0.0));
 
-    qDebug() << "_fastAverage" << _fastAverage.cols << _fastAverage.rows << _fastAverage.type() << _fastAverage.depth();
-    qDebug() << "_fastVariance" << _fastVariance.cols << _fastVariance.rows << _fastVariance.type() << _fastVariance.depth();
-    qDebug() << "_slowAverage" << _slowAverage.cols << _slowAverage.rows << _slowAverage.type() << _slowAverage.depth();
-    qDebug() << "_slowVariance" << _slowVariance.cols << _slowVariance.rows << _slowVariance.type() << _slowVariance.depth();
-
-    emit fast(TaggedMat(_fastAverage,mat.second));
-    emit fastVar(TaggedMat(_fastVariance,mat.second));
-    emit fastStd(TaggedMat(_fastVariance,mat.second));
-    emit slow(TaggedMat(_slowAverage,mat.second));
-    emit slowVar(TaggedMat(_slowVariance,mat.second));
-    emit slowStd(TaggedMat(_slowVariance,mat.second));
-    emit out(TaggedMat(_average,mat.second));
+    emit fast(MatEvent(_fastAverage,input.timestamp()));
+    emit fastVar(MatEvent(_fastVariance,input.timestamp()));
+    emit fastStd(MatEvent(_fastVariance,input.timestamp()));
+    emit slow(MatEvent(_slowAverage,input.timestamp()));
+    emit slowVar(MatEvent(_slowVariance,input.timestamp()));
+    emit slowStd(MatEvent(_slowVariance,input.timestamp()));
+    emit out(MatEvent(_average,input.timestamp()));
 
     return;
   }
@@ -118,16 +111,6 @@ void DepthFilterV2::in(const TaggedMat &mat) {
   fastVariance.mul(fastDelta);
   cv::accumulateWeighted(fastVariance,_fastVariance,_fastGain, mask);
 
-#if 0
-  cv::Mat diff;
-  cv::absdiff(slowDelta,fastDelta,diff);
-  cv::Mat alphaMat;
-  cv::normalize(diff,alphaMat,1,0,cv::NORM_MINMAX,CV_64F,mask);
-
-  double minAlpha, maxAlpha, minMinus, maxMinus;
-  cv::minMaxLoc(alphaMat,&minAlpha,&maxAlpha);
-#endif
-
   cv::Mat fastStdMat;
   cv::sqrt(_fastVariance,fastStdMat);
   cv::Mat slowStdMat;
@@ -138,10 +121,8 @@ void DepthFilterV2::in(const TaggedMat &mat) {
   alphaMat += .01;
   cv::Mat greaterThanOneMask = alphaMat > 1.0;
   alphaMat.setTo(cv::Scalar(1.0),greaterThanOneMask);
-  //cv::normalize(_slowVariance,alphaMat,1,0,cv::NORM_MINMAX,CV_64F,mask);
 
   cv::Mat oneMinusAlpha = 1.0 - alphaMat;
-  //cv::minMaxLoc(oneMinusAlpha,&minMinus,&maxMinus);
 
   cv::Mat average = _average.clone();
   cv::Mat prod1 = average.mul(oneMinusAlpha);
@@ -161,13 +142,13 @@ void DepthFilterV2::in(const TaggedMat &mat) {
   qDebug() << "_slowVariance" << _slowVariance.cols << _slowVariance.rows << _slowVariance.type() << _slowVariance.depth();
   */
 
-  emit out(TaggedMat(_average,mat.second));
-  emit fast(TaggedMat(_fastAverage,mat.second));
-  emit fastVar(TaggedMat(_fastVariance,mat.second));
-  emit fastStd(TaggedMat(fastStdMat,mat.second));
-  emit slow(TaggedMat(_slowAverage,mat.second));
-  emit slowVar(TaggedMat(_slowVariance,mat.second));
-  emit slowStd(TaggedMat(slowStdMat,mat.second));
-  emit alpha(TaggedMat(alphaMat,mat.second));
+  emit out(MatEvent(_average,input.timestamp()));
+  emit fast(MatEvent(_fastAverage,input.timestamp()));
+  emit fastVar(MatEvent(_fastVariance,input.timestamp()));
+  emit fastStd(MatEvent(fastStdMat,input.timestamp()));
+  emit slow(MatEvent(_slowAverage,input.timestamp()));
+  emit slowVar(MatEvent(_slowVariance,input.timestamp()));
+  emit slowStd(MatEvent(slowStdMat,input.timestamp()));
+  emit alpha(MatEvent(alphaMat,input.timestamp()));
 
 }

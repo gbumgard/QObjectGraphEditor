@@ -301,17 +301,17 @@ void ApplyTerrainColorMap::flip(bool enable) {
   _flip = enable;
 }
 
-void ApplyTerrainColorMap::in(const TaggedMat &mat) {
+void ApplyTerrainColorMap::src(const MatEvent &srcEvent) {
   cv::Mat mat8U;
-  if (mat.first.depth() != CV_8U) {
-    mat.first.convertTo(mat8U,CV_8U);
+  if (srcEvent.mat().depth() != CV_8U) {
+    srcEvent.mat().convertTo(mat8U,CV_8U);
   }
   else {
-    mat8U = mat.first;
+    mat8U = srcEvent.mat();
   }
   cv::Mat mat8UC3;
   cv::cvtColor(mat8U,mat8UC3,cv::COLOR_GRAY2BGR);
-  cv::Mat dst;
-  cv::LUT(mat8UC3,getLut(_flip),dst);
-  emit out(TaggedMat(dst,mat.second));
+  cv::Mat dstMat;
+  cv::LUT(mat8UC3,getLut(_flip),dstMat);
+  emit dst(MatEvent(dstMat,srcEvent.timestamp()));
 }

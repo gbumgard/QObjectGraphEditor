@@ -51,7 +51,6 @@ QSizeF SizeGripperWidget::sizeHint(Qt::SizeHint which, const QSizeF &constraint)
   }
   if (constraint.width() != -1) hint.setWidth(constraint.width());
   if (constraint.height() != -1) hint.setHeight(constraint.height());
-  qDebug() << Q_FUNC_INFO << which << constraint << hint;
   return hint;
 }
 
@@ -68,7 +67,7 @@ QPainterPath SizeGripperWidget::shape() const {
 }
 
 void SizeGripperWidget::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos() << event->screenPos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos() << event->screenPos();
 
   if (QLineF(event->screenPos(),
              event->buttonDownScreenPos(Qt::LeftButton)).length()
@@ -90,7 +89,7 @@ void SizeGripperWidget::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
 }
 
 void SizeGripperWidget::mousePressEvent(QGraphicsSceneMouseEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   parentItem()->setFlag(QGraphicsItem::ItemIsMovable,false);
   parentItem()->scene()->clearSelection();
   parentItem()->setSelected(true);
@@ -98,41 +97,41 @@ void SizeGripperWidget::mousePressEvent(QGraphicsSceneMouseEvent *event) {
 }
 
 void SizeGripperWidget::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   parentItem()->setFlag(QGraphicsItem::ItemIsMovable,true);
   event->accept();
 }
 
 void SizeGripperWidget::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   event->accept();
   setCursor(Qt::SizeFDiagCursor);
   QGraphicsWidget::hoverEnterEvent(event);
 }
 
 void SizeGripperWidget::hoverLeaveEvent(QGraphicsSceneHoverEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   event->accept();
   parentItem()->setFlag(QGraphicsItem::ItemIsMovable,true);
   QGraphicsWidget::hoverLeaveEvent(event);
 }
 
 void SizeGripperWidget::dragEnterEvent(QGraphicsSceneDragDropEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   QGraphicsWidget::dragEnterEvent(event);
 }
 
 void SizeGripperWidget::dragLeaveEvent(QGraphicsSceneDragDropEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   QGraphicsWidget::dragLeaveEvent(event);
 }
 
 void SizeGripperWidget::dragMoveEvent(QGraphicsSceneDragDropEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   QGraphicsWidget::dragMoveEvent(event);
 }
 
 void SizeGripperWidget::dropEvent(QGraphicsSceneDragDropEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   QGraphicsWidget::dropEvent(event);
 }

@@ -9,112 +9,214 @@
 #include <QMap>
 #include <QSet>
 #include <QPair>
+#include <QVariant>
 
 class Connection;
 
 class OBJECTMODELSHARED_EXPORT ObjectModel
-  : public QObject
+    : public QObject
 {
 
-  Q_OBJECT
+    Q_OBJECT
 
-public:
+  public:
 
-  static const char* ID_PROPERTY_NAME;
-  static const char* MODEL_PROPERTY_NAME;
+    enum Version {
+      VERSION_0_1_0 = 0x000100,
+      CURRENT_VERSION = VERSION_0_1_0
+    };
 
-  enum Version {
-    VERSION_0_1_0 = 0x000100,
-    CURRENT_VERSION = VERSION_0_1_0
-  };
+    enum StatusCode {
+      STATUS_UNDEFINED,
+      STATUS_OK,
+      STATUS_ERROR,
+      STATUS_EXCEPTION,
+      STATUS_INVALID_SLOT_ARGUMENT_TYPE,
+      STATUS_INVALID_SLOT_ARGUMENT_FORMAT
+    };
 
-  ObjectModel(QObject* parent = nullptr);
+    Q_ENUM(StatusCode)
 
-  virtual ~ObjectModel();
+    ObjectModel(QObject* parent = nullptr);
 
-  bool load(const QString& fileName);
-  bool save(const QString& fileName) const;
+    virtual ~ObjectModel();
 
-  bool read(QDataStream& in);
-  bool write(QDataStream& out) const;
+    bool serialize(QDataStream& out,
+                   QSet<QUuid>& objectUuidSet,
+                   bool allConnections) const;
 
-  void clear();
+    bool deserialize(QDataStream& in,
+                     bool makeUnique,
+                     QMap<QUuid, QUuid>& uuidMap);
 
-  int addObject(const QString& className, int objectId = -1);
+    void clear();
 
-  bool removeObject(int objectId);
-
-  int addConnection(int senderId,
-                    int signalIndex,
-                    int receiverId,
-                    int slotIndex,
-                    int connectionId = -1);
-
-  bool removeConnection(int connectionId);
-
-  bool canConnect(int senderId,
-                  int signalIndex,
-                  int receiverId,
-                  int slotIndex) const;
-
-  bool containsObject(int objectId) const;
-  bool containsObject(QObject* object) const;
-  QObject* object(int objectId) const;
-  QList<QObject*> objects() const;
-
-  int getObjectId(const QObject* object) const;
-
-  QString className(int objectId) const;
-
-  bool containsConnection(int connectionId) const;
-  Connection connection(int connectionId) const;
-  QList<Connection> connections() const;
-  QList<Connection> connections(int objectId) const;
-  QList<Connection> connections(int objectId, int methodIndex) const;
-
-  void dump() const;
-
-public slots:
+    void dump() const;
 
 
-signals:
+    /***********************************
+     * Methods for managing objects.
+     ***********************************/
 
-  void objectAdded(int objectId);
-  void objectRemoved(int objectId);
 
-  void connectionAdded(int connectionId);
-  void connectionRemoved(int connectionId);
+    void createObject(const QString& objectClassName, const QUuid& objectUuid);
 
-protected:
+    bool removeObject(const QUuid& objectUuid);
 
-  int addConnection(int senderId,
+    bool removeObjects(QSet<QUuid>& objectUuids);
+
+    bool containsObject(const QUuid& objectUuid) const;
+
+    bool containsObject(const QObject* const object) const;
+
+    QObject* object(const QUuid &objectUuid) const;
+
+    QUuid objectUuid(const QObject* const object) const;
+
+    QSet<QUuid> objectUuids() const;
+
+    QString objectClassName(const QUuid &objectUuid) const;
+
+
+
+    /***********************************
+     * Methods for managing connections.
+     ***********************************/
+
+
+    void createConnection(const QUuid& connectionUuid,
+                          const QUuid& senderUuid,
+                          const QString& signalSignature,
+                          const QUuid& receiverUuid,
+                          const QString& slotSignature);
+
+
+    bool removeConnection(const QUuid& connectionUuid);
+
+    bool removeConnections(QSet<QUuid>& connectionUuids);
+
+    bool containsConnection(const QUuid& connectionUuid) const;
+
+    bool containsConnection(const Connection& connection) const;
+
+    Connection connection(const QUuid& connectionUuid) const;
+
+    QSet<Connection> connections(const QSet<QUuid>& connectionUuids) const;
+
+    QSet<QUuid> connectionUuids() const;
+
+    QSet<QUuid> connectionUuids(const QUuid& objectUuid) const;
+
+    QSet<QUuid> connectionUuids(const QUuid& objectUuid, const QString &methodSignature) const;
+
+
+
+    /**********************************************
+     * Convenience functions for setting predefined
+     * dynamic properties on an object.
+     **********************************************/
+
+
+    static QUuid getObjectIdProperty(const QObject* obj);
+    static void setObjectIdProperty(QObject* obj, const QUuid& objectUuid);
+
+    static ObjectModel* getObjectModelProperty(const QObject* obj);
+    static void setObjectModelProperty(QObject* obj, const ObjectModel* model);
+
+    static QString getObjectCaptionProperty(const QObject* obj);
+    static void setObjectCaptionProperty(QObject* obj, const QString& caption);
+
+    static StatusCode getObjectStatusCodeProperty(const QObject* obj);
+    static void setObjectStatusCodeProperty(QObject* obj, StatusCode statusCode);
+
+    static QString getObjectStatusMessageProperty(const QObject* obj);
+    static void setObjectStatusMessageProperty(QObject* obj, const QString& statusMessage);
+
+    static void setObjectStatus(QObject* obj, StatusCode statusCode, const QString& statusMessage = "OK");
+
+    bool canConnect(const QUuid& senderUuid,
                     const QString& signalSignature,
-                    int receiverId,
-                    const QString& slotSignature,
-                    int connectionId = -1);
+                    const QUuid& receiverUuid,
+                    const QString& slotSignature) const;
 
-  bool connect(int senderId, int signalIndex, int receiverId, int slotIndex) const;
-  bool disconnect(int senderId, int signalIndex, int receiverId, int slotIndex) const;
+  signals:
 
-private:
+    /**
+     * @brief objectAdded
+     * @param objectUuid
+     */
+    void objectAdded(const QUuid& objectUuid);
 
-  static int _nextObjectId;
-  static int _nextConnectionId;
-  static QUuid _uuid;
+    /**
+     * @brief objectRemoved
+     * @param objectUuid
+     */
+    void objectRemoved(const QUuid& objectUuid);
 
-  QMap<int,QObject*> _objects;
+    /**
+     * @brief connectionAdded
+     * @param connectionUuid
+     */
+    void connectionAdded(const QUuid& connectionUuid);
 
-  /**
-   * @brief _connectionIndex
-   * Maps connection-id to connection description.
-   */
-  QMap<int,Connection> _connectionIndex;
+    /**
+     * @brief connectionRemoved
+     * @param connectionUuid
+     */
+    void connectionRemoved(const QUuid& connectionUuid);
 
-  /**
-   * @brief _objectConnectionIndex
-   * Maps object-id to method-index to connection-id.
-   */
-  QMap<int,QMap<int,QSet<int>>> _objectConnectionIndex;
+    /**
+     * @brief objectStatusChanged
+     * @param objectUuid
+     */
+    void objectStatusChanged(const QUuid& objectUuid);
+
+
+  protected:
+
+    static constexpr const char* OBJECT_ID_PROPERTY_NAME = "x-object-id";
+    static constexpr const char* OBJECT_MODEL_PROPERTY_NAME = "x-object-model";
+    static constexpr const char* OBJECT_CAPTION_PROPERTY_NAME = "x-object-caption";
+    static constexpr const char* STATUS_CODE_PROPERTY_NAME = "x-status-code";
+    static constexpr const char* STATUS_MESSAGE_PROPERTY_NAME = "x-status-message";
+
+
+    bool connect(const QUuid& senderUuid,
+                 const QString& signalSignature,
+                 const QUuid& receiverUuid,
+                 const QString& slotSignature) const;
+
+    bool disconnect(const QUuid& senderUuid,
+                    const QString& signalSignature,
+                    const QUuid& receiverUuid,
+                    const QString& slotSignature) const;
+
+
+    static void updateObjectStatus(QObject* obj);
+
+
+  private:
+
+    static QUuid _uuid;
+
+    /**
+     * @brief _objects
+     * Maps object UUIDs to objects.
+     */
+    QMap<QUuid,QObject*> _objectIndex;
+
+    /**
+     * @brief _connectionIndex
+     * Maps connection UUIDs to connections.
+     */
+    QMap<QUuid,Connection> _connectionIndex;
+
+    /**
+     * @brief _objectConnectionIndex
+     * Maps object UUIDs to method-signatures and UUIDs for connections..
+     */
+    QMap<QUuid,QMap<QString,QSet<QUuid>>> _objectConnectionIndex;
+
 };
 
 Q_DECLARE_METATYPE(ObjectModel*)

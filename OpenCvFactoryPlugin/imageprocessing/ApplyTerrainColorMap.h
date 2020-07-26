@@ -26,11 +26,11 @@ public:
 
 signals:
 
-  void out(const TaggedMat& mat);
+  void dst(const MatEvent& mat);
 
 public slots:
 
-  void in(const TaggedMat& mat);
+  void src(const MatEvent& mat);
 
   void flip(bool enable);
 

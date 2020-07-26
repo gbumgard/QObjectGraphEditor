@@ -13,127 +13,131 @@ REGISTER_CLASS(KinectV2Sensor)
 
 KinectV2Sensor::KinectV2Sensor(QObject* parent)
   : QThread(parent)
-  , mStop(false)
-  , mUpdateDepthMapRequired(false)
-  , mUpdateIrCameraImageRequired(false)
-  , mUpdateBGRCameraImageRequired(false)
-  , mUpdatePointCloudMapRequired(false)
-  , listener_(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth)
-  , mUndistortedDepthFrame(512, 424, 4)
-  , mRegisteredColorFrame(512, 424, 4)
-  , big_mat_(1920, 1082, 4)
-  , serial_()
-  , qnan_(std::numeric_limits<float>::quiet_NaN())
-  , mFilterUnmatchedPixels(false)
-  , mGenerateHighDef(false)
-  , mirror_(true)
+  , _stop(false)
+  , _updateDepthMapRequired(false)
+  , _updateIrCameraImageRequired(false)
+  , _updateBGRCameraImageRequired(false)
+  , _updatePointCloudMapRequired(false)
+  , _listener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth)
+  , _undistortedDepthFrame(512, 424, 4)
+  , _registeredColorFrame(512, 424, 4)
+  , _bigMat(1920, 1082, 4)
+  , _serial()
+  , _qnan(std::numeric_limits<float>::quiet_NaN())
+  , _filterUnmatchedPixels(false)
+  , _generateHighDef(false)
+  , _mirror(true)
 {
-  open(serial_);
-  start();
+  if (open(_serial)) {
+    start();
+  }
 }
 
 KinectV2Sensor::~KinectV2Sensor()
 {
+  qDebug() << Q_FUNC_INFO;
   stop();
   close();
 }
 
 void KinectV2Sensor::stop()
 {
-  mStop = true;
-  mWaitCondition.wakeAll();
-  wait();
+  qDebug() << Q_FUNC_INFO;
+  if (isRunning()) {
+    _stop = true;
+    _waitCondition.wakeAll();
+    wait();
+  }
 }
 
 void KinectV2Sensor::run()
 {
-  mMutex.lock();
-  if (!dev_) {
-    mWaitCondition.wait(&mMutex);
+  _mutex.lock();
+  if (!_dev) {
+    _waitCondition.wait(&_mutex);
   }
-  mMutex.unlock();
+  _mutex.unlock();
 
-  while (!mStop) {
+  while (!_stop) {
     update();
   }
 }
 
 bool KinectV2Sensor::open(const std::string& serial)
 {
-  QMutexLocker lock(&mMutex);
-  if(freenect2_.enumerateDevices() == 0) {
-    std::cout << "no kinect2 connected!" << std::endl;
-    exit(-1);
+  QMutexLocker lock(&_mutex);
+  if(_freenect2.enumerateDevices() == 0) {
+    qDebug() << "no kinect2 connected!";
+    ObjectModel::setObjectStatus(this,ObjectModel::STATUS_ERROR,"No Kinect2 Connected");
+    return false;
   }
+
+  libfreenect2::setGlobalLogger(libfreenect2::createConsoleLogger(libfreenect2::Logger::Warning));
+  _logger = libfreenect2::getGlobalLogger();
+
+  if(!serial.empty())
+    _serial = serial;
+  else
+    _serial = _freenect2.getDefaultDeviceSerialNumber();
+
+  _dev = nullptr;
   Processor p = OPENGL;
   switch (p)
   {
 #if WITH_OPENCL
     case OPENCL:
-      std::cout << "creating OpenCL processor" << std::endl;
-      if(serial.empty())
-        dev_ = freenect2_.openDefaultDevice(new libfreenect2::OpenCLPacketPipeline());
-      else
-        dev_ = freenect2_.openDevice(serial, new libfreenect2::OpenCLPacketPipeline());
+      qDebug() << "creating OpenCL pipeline";
+      _pipeline = new libfreenect2::OpenCLPacketPipeline());
       break;
 #endif
     case OPENGL:
-      std::cout << "creating OpenGL processor" << std::endl;
-      if (serial.empty())
-        dev_ = freenect2_.openDefaultDevice (new libfreenect2::OpenGLPacketPipeline ());
-      else
-        dev_ = freenect2_.openDevice (serial, new libfreenect2::OpenGLPacketPipeline ());
+      qDebug() << "creating OpenGL processor";
+      _pipeline = new libfreenect2::OpenGLPacketPipeline();
       break;
-#if WITH_CUDA
     case CUDA:
-      std::cout << "creating Cuda processor" << std::endl;
-      if(serial.empty())
-        dev_ = freenect2_.openDefaultDevice(new libfreenect2::CudaPacketPipeline());
-      else
-        dev_ = freenect2_.openDevice(serial, new libfreenect2::CudaPacketPipeline());
+      qDebug() << "creating Cuda processor";
+      _pipeline = new libfreenect2::CudaPacketPipeline();
       break;
-#endif
     default:
-      std::cout << "creating Cpu processor" << std::endl;
-      if (serial_.empty())
-        dev_ = freenect2_.openDefaultDevice (new libfreenect2::CpuPacketPipeline ());
-      else
-        dev_ = freenect2_.openDevice (serial, new libfreenect2::CpuPacketPipeline ());
+      qDebug() << "creating Cpu processor";
+      _pipeline = new libfreenect2::CpuPacketPipeline();
       break;
   }
 
-  if (!dev_) {
-    std::cout << "open failed" << std::endl;
-    exit(-1);
+  if(serial.empty())
+    _dev = _freenect2.openDefaultDevice(_pipeline);
+  else
+    _dev = _freenect2.openDevice(serial,_pipeline);
+
+  if (!_dev) {
+    qDebug() << "open failed";
+    ObjectModel::setObjectStatus(this,ObjectModel::STATUS_ERROR,"Open Failed");
+    return false;
   }
 
-  std::cout << "open succeeded" << std::endl;
+  qDebug() << "open succeeded";
+  ObjectModel::setObjectStatus(this,ObjectModel::STATUS_OK,"OK");
 
-  if(!serial.empty())
-    serial_ = serial;
-  else
-    serial_ = freenect2_.getDefaultDeviceSerialNumber();
+  _dev->setColorFrameListener(&_listener);
+  _dev->setIrAndDepthFrameListener(&_listener);
 
-  dev_->setColorFrameListener(&listener_);
-  dev_->setIrAndDepthFrameListener(&listener_);
+  if (_dev->start()) {
 
-  if (dev_->start()) {
+    qDebug() << "start succeeded on device" << _dev->getSerialNumber().c_str() << _dev->getFirmwareVersion().c_str();
+    ObjectModel::setObjectStatus(this,ObjectModel::STATUS_OK,"OK");
 
-    libfreenect2::setGlobalLogger(libfreenect2::createConsoleLogger(libfreenect2::Logger::Warning));
-    logger_ = libfreenect2::getGlobalLogger();
+    _registration = new libfreenect2::Registration(_dev->getIrCameraParams(), _dev->getColorCameraParams());
 
-    registration_ = new libfreenect2::Registration(dev_->getIrCameraParams(), dev_->getColorCameraParams());
+    prepareMake3D(_dev->getIrCameraParams());
 
-    prepareMake3D(dev_->getIrCameraParams());
-
-    mWaitCondition.wakeAll();
+    _waitCondition.wakeAll();
     return true;
   }
   else {
-    mStop = true;
-    mWaitCondition.wakeAll();
+    qDebug() << "start failed";
+    ObjectModel::setObjectStatus(this,ObjectModel::STATUS_ERROR,"Kinect failed to start");
+    return false;
   }
-  return false;
 }
 
 void KinectV2Sensor::close()
@@ -142,30 +146,30 @@ void KinectV2Sensor::close()
 }
 
 libfreenect2::Freenect2Device::IrCameraParams KinectV2Sensor::getIrParameters(){
-  libfreenect2::Freenect2Device::IrCameraParams ir = dev_->getIrCameraParams();
+  libfreenect2::Freenect2Device::IrCameraParams ir = _dev->getIrCameraParams();
   return ir;
 }
 
 libfreenect2::Freenect2Device::ColorCameraParams KinectV2Sensor::getRgbParameters(){
-  libfreenect2::Freenect2Device::ColorCameraParams rgb = dev_->getColorCameraParams();
+  libfreenect2::Freenect2Device::ColorCameraParams rgb = _dev->getColorCameraParams();
   return rgb;
 }
 
 void KinectV2Sensor::disableLog() {
-  logger_ = libfreenect2::getGlobalLogger();
+  _logger = libfreenect2::getGlobalLogger();
   libfreenect2::setGlobalLogger(nullptr);
 }
 
 void KinectV2Sensor::enableLog() {
-  libfreenect2::setGlobalLogger(logger_);
+  libfreenect2::setGlobalLogger(_logger);
 }
 
 void KinectV2Sensor::printParameters(){
   libfreenect2::Freenect2Device::ColorCameraParams cp = getRgbParameters();
-  std::cout << "rgb fx=" << cp.fx << ",fy=" << cp.fy <<
-               ",cx=" << cp.cx << ",cy=" << cp.cy << std::endl;
+  qDebug() << "rgb fx=" << cp.fx << ",fy=" << cp.fy <<
+               ",cx=" << cp.cx << ",cy=" << cp.cy;
   libfreenect2::Freenect2Device::IrCameraParams ip = getIrParameters();
-  std::cout << "ir fx=" << ip.fx
+  qDebug() << "ir fx=" << ip.fx
             << ",fy=" << ip.fy
             << ",cx=" << ip.cx
             << ",cy=" << ip.cy
@@ -174,7 +178,7 @@ void KinectV2Sensor::printParameters(){
             << ",k3=" << ip.k3
             << ",p1=" << ip.p1
             << ",p2=" << ip.p2
-            << std::endl;
+           ;
 }
 
 void KinectV2Sensor::storeParameters(){
@@ -185,8 +189,8 @@ void KinectV2Sensor::storeParameters(){
   cv::Mat rgb = (cv::Mat_<float>(3,3) << cp.fx, 0, cp.cx, 0, cp.fy, cp.cy, 0, 0, 1);
   cv::Mat depth = (cv::Mat_<float>(3,3) << ip.fx, 0, ip.cx, 0, ip.fy, ip.cy, 0, 0, 1);
   cv::Mat depth_dist = (cv::Mat_<float>(1,5) << ip.k1, ip.k2, ip.p1, ip.p2, ip.k3);
-  std::cout << "storing " << serial_ << std::endl;
-  cv::FileStorage fs("calib_" + serial_ + ".yml", cv::FileStorage::WRITE);
+  qDebug() << "storing " << _serial.c_str();
+  cv::FileStorage fs("calib_" + _serial + ".yml", cv::FileStorage::WRITE);
 
   fs << "CcameraMatrix" << rgb;
   fs << "DcameraMatrix" << depth << "distCoeffs" << depth_dist;
@@ -195,20 +199,23 @@ void KinectV2Sensor::storeParameters(){
 }
 
 void KinectV2Sensor::shutDown(){
-  dev_->stop();
-  dev_->close();
+  qDebug() << Q_FUNC_INFO;
+  if (_dev) {
+    _dev->stop();
+    _dev->close();
+  }
 }
 
 libfreenect2::SyncMultiFrameListener* KinectV2Sensor::getListener(){
-  return &listener_;
+  return &_listener;
 }
 
 void KinectV2Sensor::prepareMake3D(const libfreenect2::Freenect2Device::IrCameraParams & depth_p)
 {
   const int w = 512;
   const int h = 424;
-  float * pm1 = colmap.data();
-  float * pm2 = rowmap.data();
+  float * pm1 = _colmap.data();
+  float * pm2 = _rowmap.data();
   for(int i = 0; i < w; i++)
   {
     *pm1++ = (i-depth_p.cx + 0.5) / depth_p.fx;
@@ -240,9 +247,9 @@ void KinectV2Sensor::updateConnectionState() {
   static const QMetaMethod pointCloudMapSignal = QMetaMethod::fromSignal(&KinectV2Sensor::pointCloud);
 #endif
 
-  mUpdateDepthMapRequired = isSignalConnected(depthMapSignal);
-  mUpdateIrCameraImageRequired = isSignalConnected(irCameraImageSignal);
-  mUpdateBGRCameraImageRequired = isSignalConnected(bgrCameraImageSignal);
+  _updateDepthMapRequired = isSignalConnected(depthMapSignal);
+  _updateIrCameraImageRequired = isSignalConnected(irCameraImageSignal);
+  _updateBGRCameraImageRequired = isSignalConnected(bgrCameraImageSignal);
   mUpdateUndistortedDepthRequired = isSignalConnected(undistortedDepthSignal);
   mUpdateRegisteredColorRequired = isSignalConnected(registeredColorSignal);
 #if WITH_PCL
@@ -253,20 +260,20 @@ void KinectV2Sensor::updateConnectionState() {
 
 void KinectV2Sensor::update()
 {
-  QMutexLocker lock(&mMutex);
-  if (mUpdateDepthMapRequired ||
-      mUpdateIrCameraImageRequired ||
-      mUpdateBGRCameraImageRequired ||
+  QMutexLocker lock(&_mutex);
+  if (_updateDepthMapRequired ||
+      _updateIrCameraImageRequired ||
+      _updateBGRCameraImageRequired ||
       mUpdateUndistortedDepthRequired ||
       mUpdateRegisteredColorRequired ||
-      mUpdatePointCloudMapRequired) {
+      _updatePointCloudMapRequired) {
 
-    int seq = OpenCvFactoryPlugin::nextTag();
+    int timestamp = MatEvent::now();
 
-    if (listener_.waitForNewFrame(frames_,1000)) {
-      libfreenect2::Frame * rgbFrame = frames_[libfreenect2::Frame::Color];
-      libfreenect2::Frame * depthFrame = frames_[libfreenect2::Frame::Depth];
-      libfreenect2::Frame * irFrame = frames_[libfreenect2::Frame::Ir];
+    if (_listener.waitForNewFrame(_frames,1000)) {
+      libfreenect2::Frame * rgbFrame = _frames[libfreenect2::Frame::Color];
+      libfreenect2::Frame * depthFrame = _frames[libfreenect2::Frame::Depth];
+      libfreenect2::Frame * irFrame = _frames[libfreenect2::Frame::Ir];
 
       cv::Mat depthMat;
       cv::Mat colorMat;
@@ -274,29 +281,30 @@ void KinectV2Sensor::update()
       cv::Mat(depthFrame->height, depthFrame->width, CV_32FC1, depthFrame->data).copyTo(depthMat);
       cv::Mat(rgbFrame->height, rgbFrame->width, CV_8UC4, rgbFrame->data).copyTo(colorMat);
 
-      if (mUpdateIrCameraImageRequired) {
+      if (_updateIrCameraImageRequired) {
         cv::Mat irMat;
         cv::Mat(irFrame->height, irFrame->width, CV_32FC1, irFrame->data).copyTo(irMat);
-        if (mirror_ == true) {
+        if (_mirror == true) {
           cv::flip(irMat, irMat, 1);
         }
-        emit ir(TaggedMat(irMat,seq));
+        emit ir(QVariant::fromValue(MatEvent(irMat,timestamp)));
+        emit mat(QVariant::fromValue(irMat));
       }
 
-      if (mUpdateUndistortedDepthRequired || mUpdateRegisteredColorRequired || mUpdatePointCloudMapRequired) {
+      if (mUpdateUndistortedDepthRequired || mUpdateRegisteredColorRequired || _updatePointCloudMapRequired) {
 
         cv::Mat undistortedDepthMat;
         cv::Mat registeredColorMat;
 
-        registration_->apply(rgbFrame, depthFrame, &mUndistortedDepthFrame, &mRegisteredColorFrame, mFilterUnmatchedPixels, &big_mat_, map_);
+        _registration->apply(rgbFrame, depthFrame, &_undistortedDepthFrame, &_registeredColorFrame, _filterUnmatchedPixels, &_bigMat, _map);
 
-        cv::Mat(mUndistortedDepthFrame.height, mUndistortedDepthFrame.width, CV_32FC1, mUndistortedDepthFrame.data).copyTo(undistortedDepthMat);
-        cv::Mat(mRegisteredColorFrame.height, mRegisteredColorFrame.width, CV_8UC4, mRegisteredColorFrame.data).copyTo(registeredColorMat);
+        cv::Mat(_undistortedDepthFrame.height, _undistortedDepthFrame.width, CV_32FC1, _undistortedDepthFrame.data).copyTo(undistortedDepthMat);
+        cv::Mat(_registeredColorFrame.height, _registeredColorFrame.width, CV_8UC4, _registeredColorFrame.data).copyTo(registeredColorMat);
 
         if (mUpdateUndistortedDepthRequired || mUpdateRegisteredColorRequired) {
           cv::cvtColor(registeredColorMat,registeredColorMat,cv::COLOR_RGBA2BGR,3);
 
-          if (mirror_ == true) {
+          if (_mirror == true) {
             cv::flip(undistortedDepthMat, undistortedDepthMat, 1);
             cv::flip(registeredColorMat, registeredColorMat, 1);
           }
@@ -304,15 +312,16 @@ void KinectV2Sensor::update()
           cv::Mat mat16UC1;
           undistortedDepthMat.convertTo(mat16UC1,CV_16UC1,1.0);
 
-          emit undistortedDepth(TaggedMat(mat16UC1,seq));
-          emit registeredColor(TaggedMat(registeredColorMat,seq));
+          emit undistortedDepth(QVariant::fromValue(MatEvent(mat16UC1,timestamp)));
+          emit registeredColor(QVariant::fromValue(MatEvent(registeredColorMat,timestamp)));
+          emit mat(QVariant::fromValue(mat16UC1));
         }
 
       }
 
-      listener_.release(frames_);
+      _listener.release(_frames);
 
-      if (mirror_ == true) {
+      if (_mirror == true) {
         cv::flip(depthMat, depthMat, 1);
         cv::flip(colorMat, colorMat, 1);
       }
@@ -322,10 +331,8 @@ void KinectV2Sensor::update()
 
       cv::cvtColor(colorMat,colorMat,cv::COLOR_RGBA2BGR,3);
 
-      emit depth(TaggedMat(mat16UC1,seq));
-      TaggedMat tagged(mat16UC1,OpenCvFactoryPlugin::nextTag());
-      qDebug() << tagged.second;
-      emit color(TaggedMat(colorMat,seq));
+      emit depth(QVariant::fromValue(MatEvent(mat16UC1,timestamp)));
+      emit color(QVariant::fromValue(MatEvent(colorMat,timestamp)));
 
   #if WITH_PCL
 

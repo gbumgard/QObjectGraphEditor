@@ -27,7 +27,6 @@ public:
   virtual ~InRangeFilter() {}
 
   double minimum() const { return _minimum; }
-
   double maximum() const { return _maximum; }
 
   double low() const { return _low; }
@@ -35,7 +34,7 @@ public:
 
 public slots:
 
-  void in(const TaggedMat& mat);
+  void in(const MatEvent& event);
 
   void minimum(double minimum) {
     _minimum = minimum;
@@ -55,7 +54,7 @@ public slots:
 
 signals:
 
-  void out(const TaggedMat& taggedMat);
+  void out(const MatEvent& event);
 
 private:
 

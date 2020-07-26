@@ -10,7 +10,7 @@ public:
 
   static const QString MIME_TYPE;
 
-  SignalMimeData(int objectId, int methodIndex, ObjectGraphEdge* edge);
+  SignalMimeData(const QUuid& objectUuid, const QString& methodSignature, ObjectGraphEdge* edge);
 
   QStringList formats() const override;
   bool hasFormat(const QString& mimeType) const override;

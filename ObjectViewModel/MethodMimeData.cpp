@@ -2,10 +2,10 @@
 
 #include <QDebug>
 
-MethodMimeData::MethodMimeData(int objectId, int methodIndex, ObjectGraphEdge* connectionPath)
+MethodMimeData::MethodMimeData(const QUuid& objectUuid, const QString& methodSignature, ObjectGraphEdge* connectionPath)
   : QMimeData()
-  , _objectId(objectId)
-  , _methodIndex(methodIndex)
+  , _objectUuid(objectUuid)
+  , _methodSignature(methodSignature)
   , _edge(connectionPath)
 {
 }

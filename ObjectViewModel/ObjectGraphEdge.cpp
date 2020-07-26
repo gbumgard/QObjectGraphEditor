@@ -8,12 +8,12 @@
 
 #include <QDebug>
 
-ObjectGraphEdge::ObjectGraphEdge(int connectionId)
+ObjectGraphEdge::ObjectGraphEdge(const QUuid &connectionUuid)
   : QObject()
   , QGraphicsPathItem()
-  , _connectionId(connectionId)
+  , _connectionUuid(connectionUuid)
 {
-  setZValue(ObjectGraph::topZValue());
+  setZValue(ObjectGraph::topEdgeZValue());
   setFlag(QGraphicsItem::ItemIsSelectable,true);
   setAcceptHoverEvents(true);
 }
@@ -83,7 +83,7 @@ void ObjectGraphEdge::updatePath() {
 QVariant ObjectGraphEdge::itemChange(GraphicsItemChange change, const QVariant &value) {
   if (change == QGraphicsItem::ItemSelectedChange) {
     if (value.toBool()) {
-      setZValue(ObjectGraph::topZValue());
+      setZValue(ObjectGraph::topEdgeZValue());
       update();
     }
   }

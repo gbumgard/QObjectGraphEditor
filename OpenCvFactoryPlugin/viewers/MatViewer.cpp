@@ -59,28 +59,78 @@ inline QImage mat_to_qimage_cpy(cv::Mat const &mat, bool swap)
   return mat_to_qimage_ref(const_cast<cv::Mat&>(mat), swap).copy();
 }
 
-MatViewer::MatViewer(QWidget *parent)
-  : QWidget(parent)
+MatViewer::MatViewer(QObject *parent)
+  : QWidget()
   , _swapRedBlue(false)
   , _imageSize()
 {
+  qDebug() << Q_FUNC_INFO;
+  QObject::setParent(parent);
   setProperty("methodOffset",QWidget::staticMetaObject.methodOffset());
   setAutoFillBackground(false);
   setAttribute(Qt::WA_NoSystemBackground, true);
   setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding);
 }
 
-void MatViewer::in(const TaggedMat& taggedMat) {
-  cv::Mat mat8UC3;
-  taggedMat.first.convertTo(mat8UC3,CV_8UC3);
-  _image = mat_to_qimage_cpy(mat8UC3,_swapRedBlue);
-  if (taggedMat.first.size() != _imageSize) {
-    _imageSize = taggedMat.first.size();
-    qDebug() << Q_FUNC_INFO << _imageSize.width << _imageSize.height;
-    setMinimumSize(_imageSize.width,_imageSize.height);
-    adjustSize();
+void MatViewer::src(const QVariant &variant) {
+
+  if (variant.userType() == MatEvent::userType()) {
+
+    MatEvent matEvent(qvariant_cast<MatEvent>(variant));
+    cv::Mat mat8UC3;
+
+    matEvent.mat().convertTo(mat8UC3,CV_8UC3);
+    _image = mat_to_qimage_cpy(mat8UC3,_swapRedBlue);
+
+    if (matEvent.mat().size() != _imageSize) {
+      _imageSize = matEvent.mat().size();
+      setMinimumSize(_imageSize.width,_imageSize.height);
+      adjustSize();
+    }
+
+    ObjectModel::setObjectStatus(this,ObjectModel::STATUS_OK);
+
+    update();
   }
-  update();
+  else if (variant.userType() == QVariant::fromValue(cv::Mat()).userType()) {
+
+    cv::Mat mat(qvariant_cast<cv::Mat>(variant));
+    cv::Mat mat8UC3;
+
+    mat.convertTo(mat8UC3,CV_8UC3);
+
+    _image = mat_to_qimage_cpy(mat8UC3,_swapRedBlue);
+    if (mat.size() != _imageSize) {
+      _imageSize = mat.size();
+      setMinimumSize(_imageSize.width,_imageSize.height);
+      adjustSize();
+    }
+
+    ObjectModel::setObjectStatus(this,ObjectModel::STATUS_OK);
+
+    update();
+  }
+  else if (variant.type() == QVariant::Image) {
+
+    QImage _image = qvariant_cast<QImage>(variant);
+
+    if (_image.size() != QSize(_imageSize.width,_imageSize.height)) {
+      _imageSize = cv::Size(_image.size().width(),_image.size().height());
+      setMinimumSize(_imageSize.width,_imageSize.height);
+      adjustSize();
+    }
+
+    ObjectModel::setObjectStatus(this,ObjectModel::STATUS_OK);
+
+    update();
+  }
+  else {
+    ObjectModel::setObjectStatus(this,ObjectModel::STATUS_INVALID_SLOT_ARGUMENT_FORMAT,"Invalid SRC");
+  }
+}
+
+MatViewer::~MatViewer() {
+  qDebug() << Q_FUNC_INFO;
 }
 
 void MatViewer::paintEvent(QPaintEvent* /*event*/)

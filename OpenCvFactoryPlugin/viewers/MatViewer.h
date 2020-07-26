@@ -1,5 +1,5 @@
-#ifndef TaggedMatViewer_H
-#define TaggedMatViewer_H
+#ifndef MatEventViewer_H
+#define MatEventViewer_H
 
 #include "OpenCvFactoryPlugin.h"
 
@@ -14,26 +14,33 @@ class MatViewer : public QWidget
 
   Q_CLASSINFO("class-alias","Mat Viewer")
   Q_CLASSINFO("directory","OpenCV/Output")
+  Q_CLASSINFO("slot-order","src(QVariant)")
+  Q_CLASSINFO("signal-order","NONE")
 
-  Q_PROPERTY(QString caption READ caption WRITE setCaption)
-  Q_PROPERTY(bool SwapRedBlue READ swapRedBlue WRITE swapRedBlue)
+  Q_PROPERTY(QString caption READ caption WRITE caption STORED true FINAL)
+  Q_PROPERTY(bool SwapRedBlue READ swapRedBlue WRITE swapRedBlue STORED true FINAL)
 
 public:
 
-  Q_INVOKABLE explicit MatViewer(QWidget* parent = nullptr);
+  Q_INVOKABLE explicit MatViewer(QObject* parent = nullptr);
+
+  virtual ~MatViewer();
 
   QString caption() const {
     return QObject::objectName();
   }
 
-  void setCaption(const QString& caption) {
+  void caption(const QString& caption) {
     QObject::setObjectName(caption);
   }
 
-  QImage image() const { return _image; }
+  bool swapRedBlue() const {
+    return _swapRedBlue;
+  }
 
-  bool swapRedBlue() const { return _swapRedBlue; }
-  void swapRedBlue(bool swapRedBlue) { _swapRedBlue = swapRedBlue; }
+  void swapRedBlue(bool swapRedBlue) {
+    _swapRedBlue = swapRedBlue;
+  }
 
   QSize sizeHint() const {
     return _image.size();
@@ -41,7 +48,13 @@ public:
 
 public slots:
 
-  void in(const TaggedMat& taggedImage);
+  QVARIANT_PAYLOAD(MatEvent)
+  QVARIANT_PAYLOAD(cv::Mat)
+  QVARIANT_PAYLOAD(QImage)
+  void src(const QVariant& variant);
+
+signals:
+
 
 protected:
 
@@ -55,4 +68,4 @@ private:
 
 };
 
-#endif // TaggedMatViewer_H
+#endif // MatEventViewer_H

@@ -199,6 +199,7 @@ void PropertySheetPrivate::addClassProperties(const QMetaObject *metaObject)
   QtProperty *classProperty = m_classToProperty.value(metaObject);
   if (!classProperty) {
     QString className = QLatin1String(metaObject->className());
+    qDebug() << className;
     classProperty = m_manager->addProperty(QtVariantPropertyManager::groupTypeId(), className);
     m_classToProperty[metaObject] = classProperty;
     m_propertyToClass[classProperty] = metaObject;

@@ -25,6 +25,8 @@ public:
 
 protected:
 
+  static constexpr const char* GRAPH_MIME_TYPE = "application/x-graphite-grf";
+
   void loadObjectFactoryPlugins();
 
   void setStyles();
@@ -34,7 +36,9 @@ protected:
   bool open(const QString& fileName);
   bool save(const QString& fileName);
 
-public slots:
+  virtual void closeEvent(QCloseEvent* event);
+
+private slots:
 
   void newModel();
   void openModel();
@@ -45,24 +49,20 @@ public slots:
   void closeModel();
   void exitApp();
 
-  void undo();
-  void redo();
-  void cut();
-  void copy();
-  void paste();
-  void selectAll();
-
-  void toggleFullScreen();
-
   void about();
   void aboutPlugins();
 
-private slots:
+  void toggleFullScreen();
+
+  void onCutAction();
+  void onCopyAction();
+  void onPasteAction();
+  void onDeleteAction();
+  void onSelectAllAction();
 
   void onSceneSelectionChanged();
 
   void slotValueChanged(QtProperty*, const QVariant&, const QVariant&);
-
 
 private:
 

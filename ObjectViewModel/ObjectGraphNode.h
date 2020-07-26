@@ -10,6 +10,11 @@
 #include <QMetaMethod>
 
 #include <QMap>
+#include <QMenu>
+#include <QGraphicsSceneContextMenuEvent>
+#include <QUuid>
+
+#include <QDebug>
 
 class QGraphicsProxyWidget;
 class QGraphicsSimpleTextItem;
@@ -29,7 +34,8 @@ class ObjectGraphNode : public QGraphicsWidget
   Q_OBJECT
 
   Q_PROPERTY(QString caption READ caption WRITE setCaption)
-  Q_PROPERTY(QString status READ status WRITE setStatus)
+  Q_PROPERTY(QString statusCode READ statusCode)
+  Q_PROPERTY(QString statusMessage READ statusMessage)
   Q_PROPERTY(QPen pen READ pen WRITE setPen)
   Q_PROPERTY(QBrush brush READ brush WRITE setBrush)
 
@@ -39,16 +45,15 @@ public:
 
   virtual ~ObjectGraphNode();
 
-  bool read(QDataStream& in);
-  bool write(QDataStream& out) const;
-
   ObjectGraph* graph() const;
 
   ObjectModel* model() const;
 
   QObject* object() const { return _object; }
 
-  int objectId() const;
+  QUuid uuid() const { return objectUuid(); }
+
+  QUuid objectUuid() const;
 
   QPen pen() const { return _pen; }
   void setPen(const QPen& pen);
@@ -59,21 +64,36 @@ public:
   QString caption() const { return _caption->text(); }
   void setCaption(const QString& caption);
 
-  QString status() const { return _status->toPlainText(); }
-  void setStatus(const QString& status);
+  int statusCode() const { return _statusCode; }
+  QString statusMessage() const { return _status->toPlainText(); }
+
+  void setStatus(int statusCode, const QString& statusMessage);
 
   QPainterPath shape() const override;
   QRectF boundingRect() const override;
 
-  void bindToSignalConnectionPoint(int signalIndex, ObjectGraphEdge* edge);
-  void bindToSlotConnectionPoint(int slotIndex, ObjectGraphEdge* edge);
+  void bindToSignalConnectionPoint(const QString &signalSignature, ObjectGraphEdge* edge);
+  void bindToSlotConnectionPoint(const QString& slotIndex, ObjectGraphEdge* edge);
+
+  void  contextMenuEvent(QGraphicsSceneContextMenuEvent* e) override;
+
+signals:
+
+  void onMoved(const QPointF offset);
+
+public slots:
 
 private slots:
 
+  void onObjectDestroyed();
+
   void onObjectNameChanged(const QString& name);
+
   void updateNodeLayout();
 
   void onProxySizeChanged();
+
+  void onContextHelp() const;
 
 protected:
 
@@ -99,13 +119,12 @@ protected:
 
   void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
 
-#if 0
-  void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
-  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 
+#if 0
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+  void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
   void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
   void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
-
   void dragEnterEvent(QGraphicsSceneDragDropEvent *event) override;
   void dragLeaveEvent(QGraphicsSceneDragDropEvent *event) override;
   void dragMoveEvent(QGraphicsSceneDragDropEvent *event) override;
@@ -117,16 +136,23 @@ private:
   QObject* _object;
   QGraphicsProxyWidget* _proxy;
 
+  ObjectGraph* _graph;
+
+  int _statusCode;
+
   QGraphicsPathItem* _rect;
   QGraphicsSimpleTextItem* _caption;
   QGraphicsTextItem* _status;
   SizeGripper* _sizeGripper;
 
-  QMap<int,SlotConnectionPoint*> _slotConnectionPoints;
-  QMap<int,SignalConnectionPoint*> _signalConnectionPoints;
+  QVector<QMetaMethod> _slotMethodMap;
+  QVector<QMetaMethod> _signalMethodMap;
 
-  QMap<int,QGraphicsSimpleTextItem*> _slotTextItems;
-  QMap<int,QGraphicsSimpleTextItem*> _signalTextItems;
+  QMap<QString,SlotConnectionPoint*> _slotConnectionPoints;
+  QMap<QString,SignalConnectionPoint*> _signalConnectionPoints;
+
+  QMap<QString,QGraphicsSimpleTextItem*> _slotTextItems;
+  QMap<QString,QGraphicsSimpleTextItem*> _signalTextItems;
 
   QRectF _geometry;
   QRectF _boundingRect;
@@ -134,7 +160,6 @@ private:
 
   QPen _pen;
   QBrush _brush;
-  //QPointF _lastEventPosition;
 
 };
 

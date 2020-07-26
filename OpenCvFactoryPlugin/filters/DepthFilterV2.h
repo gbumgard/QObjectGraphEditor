@@ -43,7 +43,7 @@ public:
 
 public slots:
 
-  void in(const TaggedMat& mat);
+  void in(const MatEvent& mat);
 
   void min(qreal min) {
     _min = min;
@@ -57,15 +57,15 @@ public slots:
 
 signals:
 
-  void out(const TaggedMat& mat);
-  void slow(const TaggedMat& mat);
-  void slowVar(const TaggedMat& mat);
-  void slowStd(const TaggedMat& mat);
-  void fast(const TaggedMat& mat);
-  void fastVar(const TaggedMat& mat);
-  void fastStd(const TaggedMat& mat);
-  void alpha(const TaggedMat& mat);
-  void msk(const TaggedMat& mat);
+  void out(const MatEvent& mat);
+  void slow(const MatEvent& mat);
+  void slowVar(const MatEvent& mat);
+  void slowStd(const MatEvent& mat);
+  void fast(const MatEvent& mat);
+  void fastVar(const MatEvent& mat);
+  void fastStd(const MatEvent& mat);
+  void alpha(const MatEvent& mat);
+  void msk(const MatEvent& mat);
 
 protected:
 

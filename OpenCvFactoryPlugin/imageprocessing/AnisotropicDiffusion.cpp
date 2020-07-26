@@ -1,6 +1,7 @@
 #include "AnisotropicDiffusion.h"
 #include "OpenCvFactoryPlugin.h"
 
+#include <opencv2/imgproc.hpp>
 #include <opencv2/ximgproc.hpp>
 
 REGISTER_CLASS(AnisotropicDiffusion)
@@ -37,7 +38,7 @@ void AnisotropicDiffusion::iterations(int iterations) {
 void AnisotropicDiffusion::in(const cv::Mat &mat) {
   if (mat.type() != CV_8UC3) {
     cv::Mat cv8UC3;
-    cv::cvtColor(mat,cv8UC3,CV_GRAY2RGB);
+    cv::cvtColor(mat,cv8UC3,cv::COLOR_GRAY2RGB);
     _input = cv8UC3;
   }
   else {

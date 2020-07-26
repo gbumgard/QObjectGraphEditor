@@ -21,7 +21,7 @@ SizeGripper::SizeGripper(const QSizeF& size, QGraphicsItem* parent)
 }
 
 void SizeGripper::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos() << event->screenPos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos() << event->screenPos();
 
   if (QLineF(event->screenPos(),
              event->buttonDownScreenPos(Qt::LeftButton)).length()
@@ -43,7 +43,7 @@ void SizeGripper::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
 }
 
 void SizeGripper::mousePressEvent(QGraphicsSceneMouseEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   parentItem()->setFlag(QGraphicsItem::ItemIsMovable,false);
   parentItem()->scene()->clearSelection();
   parentItem()->setSelected(true);
@@ -51,41 +51,41 @@ void SizeGripper::mousePressEvent(QGraphicsSceneMouseEvent *event) {
 }
 
 void SizeGripper::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   parentItem()->setFlag(QGraphicsItem::ItemIsMovable,true);
   event->accept();
 }
 
 void SizeGripper::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   event->accept();
   setCursor(Qt::SizeFDiagCursor);
   RoundedPolygonItem::hoverEnterEvent(event);
 }
 
 void SizeGripper::hoverLeaveEvent(QGraphicsSceneHoverEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   event->accept();
   parentItem()->setFlag(QGraphicsItem::ItemIsMovable,true);
   RoundedPolygonItem::hoverLeaveEvent(event);
 }
 
 void SizeGripper::dragEnterEvent(QGraphicsSceneDragDropEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   RoundedPolygonItem::dragEnterEvent(event);
 }
 
 void SizeGripper::dragLeaveEvent(QGraphicsSceneDragDropEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   RoundedPolygonItem::dragLeaveEvent(event);
 }
 
 void SizeGripper::dragMoveEvent(QGraphicsSceneDragDropEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   RoundedPolygonItem::dragMoveEvent(event);
 }
 
 void SizeGripper::dropEvent(QGraphicsSceneDragDropEvent *event) {
-  qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
+  //qDebug() << Q_FUNC_INFO << event->pos() << event->scenePos();
   RoundedPolygonItem::dropEvent(event);
 }

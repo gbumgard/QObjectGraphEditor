@@ -95,6 +95,9 @@
        <property name="resizeAnchor">
         <enum>QGraphicsView::AnchorViewCenter</enum>
        </property>
+       <property name="rubberBandSelectionMode">
+        <enum>Qt::ContainsItemShape</enum>
+       </property>
       </widget>
       <widget class="QSplitter" name="verticalSplitter">
        <property name="sizePolicy">
@@ -184,6 +187,7 @@
     <addaction name="actionDelete"/>
     <addaction name="separator"/>
     <addaction name="actionSelectAll"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menu_Window">
     <property name="title">
@@ -265,7 +269,7 @@
     <string>&amp;Undo</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Shift+Z</string>
+    <string>Ctrl+Z</string>
    </property>
   </action>
   <action name="actionRedo">
@@ -273,7 +277,7 @@
     <string>&amp;Redo</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Z</string>
+    <string>Ctrl+Shift+Z</string>
    </property>
   </action>
   <action name="actionCut">
@@ -317,7 +321,7 @@
     <string>Delete</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+V, Del</string>
+    <string>Del</string>
    </property>
   </action>
   <action name="actionSelectAll">

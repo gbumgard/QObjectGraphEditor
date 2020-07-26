@@ -29,14 +29,14 @@ public:
 
 public slots:
 
-  void in(const TaggedMat& alpha);
+  void in(const MatEvent& alpha);
 
   void scale(double scale);
   void offset(double offset);
 
 signals:
 
-  void out(const TaggedMat& taggedMat);
+  void out(const MatEvent& event);
 
 protected:
 

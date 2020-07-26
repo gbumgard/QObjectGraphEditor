@@ -1,12 +1,13 @@
 #ifndef GAUSSIANBLURFILTER_H
 #define GAUSSIANBLURFILTER_H
 
+#include "OpenCvFactoryPlugin.h"
+
 #include <QObject>
-#include "AbstractOpenCvObject.h"
 #include <opencv2/core.hpp>
 #include <QSize>
 
-class GaussianBlurFilter : public AbstractOpenCvObject
+class GaussianBlurFilter : public QObject
 {
 
   Q_OBJECT
@@ -30,11 +31,11 @@ public:
 
 private:
 
-  Q_PROPERTY(int kernelSizeX READ kernelSizeX WRITE setKernelSizeX)
-  Q_PROPERTY(int kernelSizeY READ kernelSizeY WRITE setKernelSizeY)
-  Q_PROPERTY(double sigmaX READ sigmaX WRITE setSigmaX)
-  Q_PROPERTY(double sigmaY READ sigmaY WRITE setSigmaY)
-  Q_PROPERTY(BorderType borderType READ borderType WRITE setBorderType)
+  Q_PROPERTY(int KernelSizeX READ kernelSizeX WRITE kernelSizeX)
+  Q_PROPERTY(int KernelSizeY READ kernelSizeY WRITE kernelSizeY)
+  Q_PROPERTY(double SigmaX READ sigmaX WRITE sigmaX)
+  Q_PROPERTY(double SigmaY READ sigmaY WRITE sigmaY)
+  Q_PROPERTY(BorderType BorderType READ borderType WRITE borderType)
 
 public:
 
@@ -43,31 +44,37 @@ public:
   virtual ~GaussianBlurFilter() {}
 
   int kernelSizeX() const { return _kernelSizeX; }
+  void kernelSizeX(int kernelSizeX) {
+    if (kernelSizeX < 1) kernelSizeX = 3;
+    _kernelSizeX = 1 + (kernelSizeX / 2) * 2;
+  }
+
   int kernelSizeY() const { return _kernelSizeY; }
+  void kernelSizeY(int kernelSizeY) {
+    if (kernelSizeY < 1) kernelSizeY = 3;
+    _kernelSizeY = 1 + (kernelSizeY / 2) * 2;
+  }
 
   double sigmaX() const { return _sigmaX; }
+  void sigmaX(double sigmaX) { _sigmaX = sigmaX; }
+
   double sigmaY() const { return _sigmaY; }
+  void sigmaY(double sigmaY) { _sigmaY = sigmaY; }
+
+
 
   BorderType borderType() const { return _borderType; }
-  void setBorderType(BorderType borderType);
+  void borderType(BorderType borderType) { _borderType = borderType; }
 
 public slots:
 
-  void in(const cv::Mat& mat);
-
-  void setKernelSizeX(int kernelSizeX);
-  void setKernelSizeY(int kernelSizeY);
-
-  void setSigmaX(double sigmaX);
-  void setSigmaY(double sigmaY);
+  void in(const MatEvent& input);
 
 signals:
 
-  void out(const cv::Mat& mat);
+  void out(const MatEvent& output);
 
 protected:
-
-  void update();
 
 private:
 
@@ -78,8 +85,6 @@ private:
   double _sigmaY;
 
   BorderType _borderType;
-
-  cv::Mat _input;
 
 };
 

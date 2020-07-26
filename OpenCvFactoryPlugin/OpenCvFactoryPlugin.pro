@@ -37,7 +37,14 @@ LIBS += -L/usr/local/lib \
   -lfreenect2 \
   -lglut \
   -lpthread \
-  -lusb-1.0
+  -lusb-1.0 \
+  -lpcl_apps              -lpcl_common              -lpcl_features                -lpcl_filters \
+  -lpcl_io                -lpcl_io_ply              -lpcl_kdtree                  -lpcl_keypoints \
+  -lpcl_ml                -lpcl_octree              -lpcl_outofcore               -lpcl_people \
+  -lpcl_recognition       -lpcl_registration        -lpcl_sample_consensus        -lpcl_search \
+  -lpcl_segmentation      -lpcl_stereo              -lpcl_surface                 -lpcl_tracking \
+  -lpcl_visualization
+
 #  -lpcl_common \
 #  -lpcl_cuda_features \
 #  -lpcl_cuda_io \
@@ -60,7 +67,7 @@ INCLUDEPATH += \
   $$PWD/../ObjectModel
 
 INCLUDEPATH += /usr/include/eigen3
-INCLUDEPATH += /usr/local/include/pcl-1.8
+INCLUDEPATH += /usr/include/pcl-1.8
 INCLUDEPATH += /usr/include/libusb-1.0
 INCLUDEPATH += /usr/local/include/opencv4
 
@@ -73,113 +80,140 @@ DEPENDPATH += \
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
-
 SOURCES += \
-    OpenCvFactoryPlugin.cpp \
-    common/AbstractOpenCvObject.cpp \
-    filters/BilateralFilter.cpp \
-    filters/DepthFilterV2.cpp \
-    filters/InRangeFilter.cpp \
-    filters/MedianFilter3D.cpp \
-    filters/RunningStatistics.cpp \
-    filters/ThresholdFilter.cpp \
-    imageprocessing/BackgroundSubtractionMask.cpp \
-    imageprocessing/ConvertToGrayScale.cpp \
-    operations/AddOperation.cpp \
-    operations/AddWeightedOperation.cpp \
-    operations/BitwiseNotOperation.cpp \
-    operations/BitwiseOrOperation.cpp \
-    operations/InRangeOperation.cpp \
-    operations/MaskOperation.cpp \
-    operations/SetToScalarOperation.cpp \
-    transformations/ClipAndNormalize.cpp \
-    transformations/ConvertScaleAbs.cpp \
-    filters/GaussianBlurFilter.cpp \
-    converters/MatToQImageConvertor.cpp \
-    utility/MatInfo.cpp \
-    utility/ThreadDecoupler.cpp \
-    viewers/Mat3DViewer.cpp \
-    transformations/MorphologyTransformation.cpp \
-    sensors/OpenNiSensor.cpp \
-    filters/RunningAverageFilter.cpp \
-    detectors/CannyLineDetector.cpp \
-    common/ThreadedObject.cpp \
-    operations/MirrorMaskOperation.cpp \
-    operations/MaskAndCopyOperation.cpp \
-    imageprocessing/AnisotropicDiffusion.cpp \
-    sensors/KinectV2Sensor.cpp \
-    filters/MedianFilter.cpp \
-    operations/SubtractOperation.cpp \
-    utility/MatQueue.cpp \
-    detectors/FindContours.cpp \
-    renderers/DrawContours.cpp \
-    operations/AbsDifferenceOperation.cpp \
-    filters/TemporalMedianFilter.cpp \
-    sensors/KinectV1Sensor.cpp \
-    imageprocessing/ApplyColorMap.cpp \
-    imageprocessing/ApplyTerrainColorMap.cpp \
-    filters/KinectV1DepthFilter.cpp \
-    utility/RunningStatsUtility.cpp \
-    utility/Statistics.cpp \
-    filters/StatFilter.cpp \
-    filters/DepthFilter.cpp \
-    filters/ChangeCommitFilter.cpp \
-    filters/MaxFilter.cpp \
-    viewers/MatViewer.cpp
+  OpenCvFactoryPlugin.cpp \
+  common/AbstractOpenCvObject.cpp \
+  sensors/KinectV2SensorAsync.cpp \
+  transformations/ClipAndNormalize.cpp \
+  viewers/MatViewer.cpp
 
+#sensors/KinectV2Sensor.cpp \
 
 HEADERS += \
-    OpenCvFactoryPlugin.h \
-    common/AbstractOpenCvObject.h \
-    filters/BilateralFilter.h \
-    filters/DepthFilterV2.h \
-    filters/InRangeFilter.h \
-    filters/MedianFilter3D.h \
-    filters/RunningStatistics.h \
-    filters/ThresholdFilter.h \
-    imageprocessing/BackgroundSubtractionMask.h \
-    imageprocessing/ConvertToGrayScale.h \
-    operations/AddOperation.h \
-    operations/AddWeightedOperation.h \
-    operations/BitwiseNotOperation.h \
-    operations/BitwiseOrOperation.h \
-    operations/InRangeOperation.h \
-    operations/MaskOperation.h \
-    operations/SetToScalarOperation.h \
-    transformations/ClipAndNormalize.h \
-    filters/GaussianBlurFilter.h \
-    converters/MatToQImageConvertor.h \
-    utility/MatInfo.h \
-    utility/ThreadDecoupler.h \
-    viewers/Mat3DViewer.h \
-    transformations/MorphologyTransformation.h \
-    transformations/ConvertScaleAbs.h \
-    sensors/OpenNiSensor.h \
-    filters/RunningAverageFilter.h \
-    detectors/CannyLineDetector.h \
-    common/ThreadedObject.h \
-    operations/MirrorMaskOperation.h \
-    operations/MaskAndCopyOperation.h \
-    imageprocessing/AnisotropicDiffusion.h \
-    sensors/KinectV2Sensor.h \
-    filters/MedianFilter.h \
-    operations/SubtractOperation.h \
-    utility/MatQueue.h \
-    detectors/FindContours.h \
-    renderers/DrawContours.h \
-    operations/AbsDifferenceOperation.h \
-    filters/TemporalMedianFilter.h \
-    sensors/KinectV1Sensor.h \
-    imageprocessing/ApplyColorMap.h \
-    imageprocessing/ApplyTerrainColorMap.h \
-    filters/KinectV1DepthFilter.h \
-    utility/RunningStatsUtility.h \
-    utility/Statistics.h \
-    filters/StatFilter.h \
-    filters/DepthFilter.h \
-    filters/ChangeCommitFilter.h \
-    filters/MaxFilter.h \
-    viewers/MatViewer.h
+  OpenCvFactoryPlugin.h \
+  common/AbstractOpenCvObject.h \
+  common/MatEvent.h \
+  common/ScalarEvent.h \
+  sensors/KinectV2SensorAsync.h \
+  transformations/ClipAndNormalize.h \
+  viewers/MatViewer.h
+
+#sensors/KinectV2Sensor.h \
+
+#SOURCES += \
+#    OpenCvFactoryPlugin.cpp \
+#    common/AbstractOpenCvObject.cpp \
+#    common/MatFingerprint.cpp \
+#    filters/BilateralFilter.cpp \
+#    filters/DepthFilterV2.cpp \
+#    filters/InRangeFilter.cpp \
+#    filters/MedianBlurFilter.cpp \
+#    filters/MedianFilter3D.cpp \
+#    filters/RunningStatistics.cpp \
+#    filters/ThresholdFilter.cpp \
+#    imageprocessing/BackgroundSubtractionMask.cpp \
+#    imageprocessing/ConvertToGrayScale.cpp \
+#    imageprocessing/motionanalysis/AccumulateWeighted.cpp \
+#    operations/AbsDifference.cpp \
+#    operations/AddArray.cpp \
+#    operations/AddWeightedOperation.cpp \
+#    operations/ApplyMask.cpp \
+#    operations/BitwiseAnd.cpp \
+#    operations/BitwiseNot.cpp \
+#    operations/BitwiseOr.cpp \
+#    operations/InRange.cpp \
+#    operations/SetToScalarOperation.cpp \
+#    transformations/ClipAndNormalize.cpp \
+#    transformations/ConvertScaleAbs.cpp \
+#    filters/GaussianBlurFilter.cpp \
+#    converters/MatToQImageConvertor.cpp \
+#    utility/MatInfo.cpp \
+#    utility/ThreadDecoupler.cpp \
+#    transformations/MorphologyTransformation.cpp \
+#    sensors/OpenNiSensor.cpp \
+#    detectors/CannyLineDetector.cpp \
+#    common/ThreadedObject.cpp \
+#    operations/MirrorMaskOperation.cpp \
+#    operations/MaskAndCopyOperation.cpp \
+#    imageprocessing/AnisotropicDiffusion.cpp \
+#    sensors/KinectV2Sensor.cpp \
+#    operations/SubtractOperation.cpp \
+#    utility/MatQueue.cpp \
+#    detectors/FindContours.cpp \
+#    renderers/DrawContours.cpp \
+#    filters/TemporalMedianFilter.cpp \
+#    sensors/KinectV1Sensor.cpp \
+#    imageprocessing/ApplyColorMap.cpp \
+#    imageprocessing/ApplyTerrainColorMap.cpp \
+#    filters/KinectV1DepthFilter.cpp \
+#    utility/RunningStatsUtility.cpp \
+#    utility/Statistics.cpp \
+#    filters/StatFilter.cpp \
+#    filters/DepthFilter.cpp \
+#    filters/ChangeCommitFilter.cpp \
+#    filters/MaxFilter.cpp \
+#    viewers/HeightMapViewer.cpp \
+#    viewers/MatViewer.cpp
+
+
+#HEADERS += \
+#    OpenCvFactoryPlugin.h \
+#    common/AbstractOpenCvObject.h \
+#    common/MatEvent.h \
+#    common/MatFingerprint.h \
+#    common/ScalarEvent.h \
+#    common/constraints.h \
+#    filters/BilateralFilter.h \
+#    filters/DepthFilterV2.h \
+#    filters/InRangeFilter.h \
+#    filters/MedianBlurFilter.h \
+#    filters/MedianFilter3D.h \
+#    filters/RunningStatistics.h \
+#    filters/ThresholdFilter.h \
+#    imageprocessing/BackgroundSubtractionMask.h \
+#    imageprocessing/ConvertToGrayScale.h \
+#    imageprocessing/motionanalysis/AccumulateWeighted.h \
+#    operations/AbsDifference.h \
+#    operations/AddArray.h \
+#    operations/AddWeightedOperation.h \
+#    operations/ApplyMask.h \
+#    operations/BitwiseAnd.h \
+#    operations/BitwiseNot.h \
+#    operations/BitwiseOr.h \
+#    operations/InRange.h \
+#    operations/InRangeElements.h \
+#    operations/SetToScalarOperation.h \
+#    transformations/ClipAndNormalize.h \
+#    filters/GaussianBlurFilter.h \
+#    converters/MatToQImageConvertor.h \
+#    utility/MatInfo.h \
+#    utility/ThreadDecoupler.h \
+#    transformations/MorphologyTransformation.h \
+#    transformations/ConvertScaleAbs.h \
+#    sensors/OpenNiSensor.h \
+#    detectors/CannyLineDetector.h \
+#    common/ThreadedObject.h \
+#    operations/MirrorMaskOperation.h \
+#    operations/MaskAndCopyOperation.h \
+#    imageprocessing/AnisotropicDiffusion.h \
+#    sensors/KinectV2Sensor.h \
+#    operations/SubtractOperation.h \
+#    utility/MatQueue.h \
+#    detectors/FindContours.h \
+#    renderers/DrawContours.h \
+#    filters/TemporalMedianFilter.h \
+#    sensors/KinectV1Sensor.h \
+#    imageprocessing/ApplyColorMap.h \
+#    imageprocessing/ApplyTerrainColorMap.h \
+#    filters/KinectV1DepthFilter.h \
+#    utility/RunningStatsUtility.h \
+#    utility/Statistics.h \
+#    filters/StatFilter.h \
+#    filters/DepthFilter.h \
+#    filters/ChangeCommitFilter.h \
+#    filters/MaxFilter.h \
+#    viewers/HeightMapViewer.h \
+#    viewers/MatViewer.h
 
 
 DISTFILES += OpenCvFactoryPlugin.json 

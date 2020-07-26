@@ -17,6 +17,8 @@ class DoubleSliderControl : public QSlider
   Q_PROPERTY(double minimum READ minimum WRITE setMinimum)
   Q_PROPERTY(double maximum READ maximum WRITE setMaximum)
 
+  Q_PROPERTY(QString caption READ caption WRITE setCaption)
+
 public:
 
   Q_INVOKABLE explicit DoubleSliderControl(QWidget* parent = nullptr);
@@ -37,6 +39,14 @@ public:
 
   double maximum() const {
     return _maximumValue;
+  }
+
+  QString caption() const {
+    return QObject::objectName();
+  }
+
+  void setCaption(const QString& caption) {
+    QObject::setObjectName(caption);
   }
 
 signals:

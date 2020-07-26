@@ -19,97 +19,175 @@ class ObjectGraphEdge;
  * slots as graph edges.
  */
 class OBJECTVIEWSHARED_EXPORT ObjectGraph
-  : public QGraphicsScene
+    : public QGraphicsScene
 {
 
-  friend class ObjectGraphNode;
-  friend class AddNodeCommand;
-  friend class RemoveNodeCommand;
-  friend class AddEdgeCommand;
-  friend class RemoveEdgeCommand;
-  friend class MoveNodesCommand;
-  friend class SetNodeSizeCommand;
-  friend class SetPropertyCommand;
+    friend class ObjectGraphNode;
 
-  Q_OBJECT
+    friend class AddNodeCommand;
+    friend class AddEdgeCommand;
+    friend class MoveNodesCommand;
+    friend class SetNodePositionCommand;
+    friend class SetNodeSizeCommand;
+    friend class SetPropertyCommand;
+    friend class CutCommand;
+    friend class CopyCommand;
+    friend class PasteCommand;
+    friend class DeleteCommand;
 
-public:
+    Q_OBJECT
 
-  ObjectGraph(QObject* parent = nullptr);
 
-  virtual ~ObjectGraph() {}
+    enum CommandIds {
+      AddNodeCommandId,
+      AddEdgeCommandId,
+      MoveNodesCommandId,
+      SetNodePositionCommandId,
+      SetNodeSizeCommandId,
+      SetPropertyCommandId,
+      CutCommandId,
+      PasteCommandId,
+      DeleteCommandId
+    };
 
-  QString fileName() const { return _fileName; }
-  void setFileName(const QString& fileName) { _fileName = fileName; }
+  public:
 
-  void clear();
+    enum Placement {
+      OriginalPlacement,
+      AbsolutePlacement,
+      OffsetPlacement
+    };
 
-  bool read(QDataStream& in);
-  bool write(QDataStream& out) const;
+    static constexpr const char* SERIALIZED_GRAPH_MIME_TYPE = "application/x-qgr-serialized-graph";
 
-  void setModel(ObjectModel* model);
-  ObjectModel* model();
+    ObjectGraph(QObject* parent = nullptr);
 
-  void setCommandStack(QUndoStack* commandStack) {
-    _commandStack = commandStack;
-  }
+    virtual ~ObjectGraph();
 
-  void addNode(const QString& className, const QPointF& position);
-  void removeNode(int objectid);
+    QString fileName() const { return _fileName; }
 
-  void addEdge(int senderId, int signalIndex, int receiverId, int slotIndex);
-  void removeEdge(int connectionId);
+    void setFileName(const QString& fileName) { _fileName = fileName; }
 
-  void moveNodes(const QList<int>& nodes, const QPointF& undoOffset);
-  void setNodeSize(int objectid, const QSizeF& size);
-  void setNodeGeometry(int objectid, const QRectF& size);
-  void setProperty(int objectid,
-                   const QString& propertyName,
-                   const QVariant& oldValue,
-                   const QVariant& newValue);
+    void clear();
 
-  static qreal topZValue();
+    bool deserialize(QDataStream& in,
+                     bool selectNodes,
+                     bool makeUnique,
+                     Placement placement,
+                     QPointF& position,
+                     QSet<QUuid>& nodeUuids);
 
-private slots:
+    bool serialize(QDataStream& out,
+                   QSet<QUuid>& nodeUuids,
+                   bool allConnections) const;
 
-  void onObjectAdded(int objectId);
-  void onObjectRemoved(int objectId);
+    void setModel(ObjectModel* model);
+    ObjectModel* model();
 
-  void onConnectionAdded(int connectionId);
-  void onConnectionRemoved(int connectionId);
+    void setCommandStack(QUndoStack* commandStack) {
+      _commandStack = commandStack;
+    }
 
-protected:
+    void addNodeAction(const QString& className, const QPointF& position);
 
-  int doAddNode(int objectId, const QString& className);
-  bool doRemoveNode(int objectid);
-  ObjectGraphNode* node(int objectId) const;
+    void addEdgeAction(const QUuid& senderUuid,
+                       const QString& signalSignature,
+                       const QUuid& receiverUuid,
+                       const QString& slotSignature);
 
-  int doAddEdge(int connectionId, int senderId, int signalIndex, int receiverId, int slotIndex);
-  bool doRemoveEdge(int connectionId);
-  ObjectGraphEdge* edge(int connectionId) const;
+    static qreal topNodeZValue();
 
-  static double _topZValue;
+    static qreal topEdgeZValue();
 
-  void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
-  void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
-  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
-  void dragEnterEvent(QGraphicsSceneDragDropEvent *event) override;
-  void dragLeaveEvent(QGraphicsSceneDragDropEvent *event) override;
-  void dropEvent(QGraphicsSceneDragDropEvent *event) override;
-  void dragMoveEvent(QGraphicsSceneDragDropEvent *event) override;
-  void keyReleaseEvent(QKeyEvent * keyEvent) override;
+  public slots:
 
-private:
+    void onUndoAction();
 
-  QString _fileName;
+    void onRedoAction();
 
-  ObjectModel* _model;
+    void onCutAction();
 
-  QMap<int,ObjectGraphNode*> _nodes;
-  QMap<int,ObjectGraphEdge*> _edges;
+    void onCopyAction();
 
-  QUndoStack* _commandStack;
+    void onPasteAction();
 
+    void onPasteAction(const QPointF& scenePosition);
+
+    void onDeleteAction();
+
+    void onSelectAllAction();
+
+    void onContextHelpAction();
+
+  private slots:
+
+    void onObjectAdded(const QUuid &objectUuid);
+
+    void onObjectRemoved(const QUuid& objectUuid);
+
+    void onConnectionAdded(const QUuid &connectionUuid);
+
+    void onConnectionRemoved(const QUuid& connectionUuid);
+
+    void onObjectStatusChanged(const QUuid &objectUuid);
+
+  protected:
+
+    void addNode(const QUuid &objectId, const QString& className);
+
+    void removeNodes(QSet<QUuid>& nodeUuids);
+
+    void addEdge(const QUuid& connectionUuid,
+                 const QUuid& senderUuid,
+                 const QString& signalSignature,
+                 const QUuid& receiverUuid,
+                 const QString& slotSignature);
+
+    void removeEdges(QSet<QUuid>& edgeUuids);
+
+    void moveNodesAction(const QSet<QUuid> &nodes, const QPointF& undoOffset);
+
+    void doMoveNodes(const QSet<QUuid> &nodes, const QPointF& undoOffset);
+
+    void setNodeSize(const QUuid& objectid, const QSizeF& size);
+
+    void setNodeGeometry(const QUuid& objectid, const QRectF& size);
+
+    void setPropertyAction(const QUuid &objectid,
+                           const QString& propertyName,
+                           const QVariant& oldValue,
+                           const QVariant& newValue);
+
+    QSet<Connection> connections(const QSet<QUuid>& edgeUuids) const;
+
+    ObjectGraphNode* node(const QUuid& nodeUuid) const;
+
+    ObjectGraphEdge* edge(const QUuid& edgeUuid) const;
+
+
+    void contextMenuEvent(QGraphicsSceneContextMenuEvent* e) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+    void dragEnterEvent(QGraphicsSceneDragDropEvent *event) override;
+    void dragLeaveEvent(QGraphicsSceneDragDropEvent *event) override;
+    void dropEvent(QGraphicsSceneDragDropEvent *event) override;
+    void dragMoveEvent(QGraphicsSceneDragDropEvent *event) override;
+    void keyReleaseEvent(QKeyEvent * keyEvent) override;
+
+  private:
+
+    QString _fileName;
+
+    ObjectModel* _model;
+
+    QMap<QUuid,ObjectGraphNode*> _nodes;
+    QMap<QUuid,ObjectGraphEdge*> _edges;
+
+    QUndoStack* _commandStack;
+
+    bool _moveInProgress;
+    QPointF _pasteOffset;
 };
 
 #endif // NODEGRAPH_H

@@ -6,7 +6,8 @@
 #include <QWheelEvent>
 #include <QToolButton>
 
-class Object;
+class SimpleObject;
+class ObjectGraphNode;
 
 class ObjectView
     : public QGraphicsView
@@ -19,35 +20,41 @@ public:
   ObjectView(QWidget* parent = nullptr);
   ObjectView(QGraphicsScene* scene, QWidget* parent = nullptr);
 
+  virtual ~ObjectView();
+
   bool load(const QString& fileName);
   bool save(const QString& fileName) const;
+
 
 public slots:
 
   void onRecenterPressed();
 
+private slots:
+
+  void onRubberBandChanged(QRect rubberBandRect, QPointF fromScenePoint, QPointF toScenePoint);
+
 protected:
 
   bool read(QDataStream& in);
+
   bool write(QDataStream& out) const;
 
-  void wheelEvent (QWheelEvent* event);
+  void wheelEvent (QWheelEvent* event) override;
 
   void resizeEvent(QResizeEvent *event) override;
 
-  void mouseMoveEvent(QMouseEvent *event) override;
+  virtual void contextMenuEvent(QContextMenuEvent *event) override;
+
   void mousePressEvent(QMouseEvent *event) override;
+
   void mouseReleaseEvent(QMouseEvent *event) override;
-  void dragEnterEvent(QDragEnterEvent *event) override;
-  void dragLeaveEvent(QDragLeaveEvent *event) override;
-  void dropEvent(QDropEvent *event) override;
-  void dragMoveEvent(QDragMoveEvent *event) override;
 
 private:
 
-  int _numScheduledScalings;
-  int _scaleSteps;
   QToolButton* _recenterButton;
+
+  QRect _selectionArea;
 
 };
 

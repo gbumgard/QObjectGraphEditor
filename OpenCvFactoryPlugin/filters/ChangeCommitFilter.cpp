@@ -49,7 +49,7 @@ void ChangeCommitFilter::in(const cv::Mat &mat) {
 
   // Create mask that identifies cells with counts > 0
   cv::Mat currentCountdownMask;
-  cv::threshold(_currentCount,currentCountdownMask,0,255,CV_THRESH_BINARY);
+  cv::threshold(_currentCount,currentCountdownMask,0,255,cv::THRESH_BINARY);
   if (currentCountdownMask.depth() != CV_8U) {
     currentCountdownMask.convertTo(currentCountdownMask,CV_8U);
   }
@@ -67,7 +67,7 @@ void ChangeCommitFilter::in(const cv::Mat &mat) {
 
   // Create mask for cells whose absolute difference is > _startThreshold
   cv::Mat thresholdMask;
-  cv::threshold(currentDifference,thresholdMask,_startThreshold,255,CV_THRESH_BINARY);
+  cv::threshold(currentDifference,thresholdMask,_startThreshold,255,cv::THRESH_BINARY);
   if (thresholdMask.depth() != CV_8U) {
     thresholdMask.convertTo(thresholdMask,CV_8U);
   }
@@ -98,7 +98,7 @@ void ChangeCommitFilter::in(const cv::Mat &mat) {
   filterUpdateMask = 255 - filterUpdateMask;
   */
   cv::Mat filterUpdateMask;
-  cv::threshold(_currentCount,filterUpdateMask,1,255,CV_THRESH_BINARY_INV);
+  cv::threshold(_currentCount,filterUpdateMask,1,255,cv::THRESH_BINARY_INV);
   if (filterUpdateMask.depth() != CV_8U) {
     filterUpdateMask.convertTo(filterUpdateMask,CV_8U);
   }

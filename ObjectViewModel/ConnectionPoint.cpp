@@ -30,8 +30,8 @@ ConnectionPoint::ConnectionPoint(const QMetaMethod& metaMethod,
   }
 }
 
-int ConnectionPoint::objectId() const {
-  return objectNode()->objectId();
+QUuid ConnectionPoint::objectUuid() const {
+  return objectNode()->uuid();
 }
 
 ObjectGraphNode* ConnectionPoint::objectNode() const {

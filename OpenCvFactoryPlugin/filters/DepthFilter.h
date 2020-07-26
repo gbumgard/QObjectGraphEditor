@@ -42,6 +42,7 @@ public slots:
 signals:
 
   void out(const cv::Mat& mat);
+  void var(const cv::Mat& mat);
 
 protected:
 

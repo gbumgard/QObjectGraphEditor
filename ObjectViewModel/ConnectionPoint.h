@@ -24,7 +24,7 @@ public:
 
   virtual ~ConnectionPoint() {}
 
-  int objectId() const;
+  QUuid objectUuid() const;
   ObjectGraphNode* objectNode() const;
   QObject* object() const;
 

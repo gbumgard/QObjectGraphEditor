@@ -38,6 +38,8 @@ signals:
 
   void variance(const cv::Mat& mat);
 
+  void filtered(const cv::Mat& mat);
+
 protected:
 
   void clear();

@@ -8,7 +8,9 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QAction>
-
+#include <QClipboard>
+#include <QMimeType>
+#include <QMimeData>
 #include <QJsonObject>
 
 #include <QMetaObject>
@@ -31,12 +33,15 @@
 
 #include <QtProperty>
 
+#include "ObjectGraph.h"
+
 QObjectGraphEditorApp::QObjectGraphEditorApp(QWidget *parent)
   : QMainWindow(parent)
   , ui(new Ui::QObjectGraphEditorApp)
   , _factoryClassTree(new QStandardItemModel(this))
 {
   ui->setupUi(this);
+
 
   //ui->horizontalSplitter->setStretchFactor(0,1);
   ui->horizontalSplitter->setStretchFactor(1,100);
@@ -50,7 +55,6 @@ QObjectGraphEditorApp::QObjectGraphEditorApp(QWidget *parent)
   _graph->setCommandStack(&_commandStack);
   ui->objectView->setScene(_graph);
 
-  connect(_graph,&QGraphicsScene::selectionChanged,this, &QObjectGraphEditorApp::onSceneSelectionChanged);
   setStyles();
 
   QAction* undoAction = _commandStack.createUndoAction(this, tr("&Undo"));
@@ -77,22 +81,27 @@ QObjectGraphEditorApp::QObjectGraphEditorApp(QWidget *parent)
   populateObjectTreeView();
 
   QModelIndexList indexes = _factoryClassTree->match(_factoryClassTree->index(0,0), Qt::DisplayRole, "*", -1, Qt::MatchWildcard|Qt::MatchRecursive);
-  foreach (QModelIndex index, indexes)
-    ui->objectClasses->expand(index);
+  //foreach (QModelIndex index, indexes)
+  //  ui->objectClasses->expand(index);
 
   connect(ui->actionNewModel,&QAction::triggered,this,&QObjectGraphEditorApp::newModel);
   connect(ui->actionOpenModel,&QAction::triggered,this,&QObjectGraphEditorApp::openModel);
   connect(ui->actionSaveModel,&QAction::triggered,this,&QObjectGraphEditorApp::saveModel);
   connect(ui->actionSaveModelAs,&QAction::triggered,this,&QObjectGraphEditorApp::saveModelAs);
   connect(ui->actionCloseModel,&QAction::triggered,this,&QObjectGraphEditorApp::closeModel);
-  connect(ui->actionExit,&QAction::triggered,this,&QObjectGraphEditorApp::exitApp);
-  connect(ui->actionCut,&QAction::triggered,this,&QObjectGraphEditorApp::cut);
-  connect(ui->actionCopy,&QAction::triggered,this,&QObjectGraphEditorApp::copy);
-  connect(ui->actionPaste,&QAction::triggered,this,&QObjectGraphEditorApp::paste);
-  connect(ui->actionSelectAll,&QAction::triggered,this,&QObjectGraphEditorApp::selectAll);
   connect(ui->actionFullScreen,&QAction::triggered,this,&QObjectGraphEditorApp::toggleFullScreen);
   connect(ui->actionAbout,&QAction::triggered,this,&QObjectGraphEditorApp::about);
   connect(ui->actionAboutPlugins,&QAction::triggered,this,&QObjectGraphEditorApp::aboutPlugins);
+  connect(ui->actionExit,&QAction::triggered,this,&QObjectGraphEditorApp::exitApp);
+
+
+  connect(ui->actionCut,&QAction::triggered,this,&QObjectGraphEditorApp::onCutAction);
+  connect(ui->actionCopy,&QAction::triggered,this,&QObjectGraphEditorApp::onCopyAction);
+  connect(ui->actionPaste,&QAction::triggered,this,&QObjectGraphEditorApp::onPasteAction);
+  connect(ui->actionDelete,&QAction::triggered,this,&QObjectGraphEditorApp::onDeleteAction);
+  connect(ui->actionSelectAll,&QAction::triggered,this,&QObjectGraphEditorApp::onSelectAllAction);
+
+  connect(_graph,&QGraphicsScene::selectionChanged,this,&QObjectGraphEditorApp::onSceneSelectionChanged);
 
 }
 
@@ -103,13 +112,13 @@ QObjectGraphEditorApp::~QObjectGraphEditorApp()
   delete ui;
 }
 
+void QObjectGraphEditorApp::closeEvent(QCloseEvent *event) {
+  // TODO: Check for changed model.
+  dynamic_cast<ObjectGraph*>(ui->objectView->scene())->clear();
+  QMainWindow::closeEvent(event);
+}
+
 void QObjectGraphEditorApp::slotValueChanged(QtProperty*, const QVariant&, const QVariant&) {
-  /*
-  qDebug() << Q_FUNC_INFO
-           << ui->propertySheet->object()->objectName()
-           << property->propertyName()
-           << value;
-           */
 }
 
 void QObjectGraphEditorApp::loadObjectFactoryPlugins() {
@@ -126,6 +135,7 @@ void QObjectGraphEditorApp::setStyles() {
 }
 
 void QObjectGraphEditorApp::populateObjectTreeView() {
+  qDebug() << Q_FUNC_INFO;
   QList<QString> classNames = ObjectFactory::names();
   for (auto className : classNames) {
     QString label = className;
@@ -135,7 +145,7 @@ void QObjectGraphEditorApp::populateObjectTreeView() {
       QMetaClassInfo info = metaObject.classInfo(i);
       if (info.name() == QStringLiteral("directory")) {
         QString path = info.value();
-        QStringList names = path.split(QChar('/'),QString::SkipEmptyParts);
+        QStringList names = path.split(QChar('/'),Qt::SkipEmptyParts);
         for (auto name : names) {
           bool found = false;
           for (int i = 0; i < parentItem->rowCount(); i++) {
@@ -147,6 +157,7 @@ void QObjectGraphEditorApp::populateObjectTreeView() {
           }
           if (!found) {
             QStandardItem* item = new QStandardItem(name);
+            parentItem->setFlags(Qt::ItemIsEnabled);
             parentItem->appendRow(item);
             parentItem = item;
           }
@@ -158,31 +169,69 @@ void QObjectGraphEditorApp::populateObjectTreeView() {
     }
     QStandardItem* item = new QStandardItem(label);
     item->setData(className);
+    parentItem->setFlags(Qt::ItemIsEnabled);
     parentItem->appendRow(item);
   }
+  this->ui->objectClasses->collapseAll();
 }
 
 void QObjectGraphEditorApp::onSceneSelectionChanged() {
-  qDebug() << Q_FUNC_INFO;
+
   QGraphicsScene* scene = ui->objectView->scene();
-  QList<QGraphicsItem*> selection = scene->selectedItems();
-  if (selection.count() == 1) {
-    QGraphicsItem* item = selection.first();
-    ObjectGraphNode* object = dynamic_cast<ObjectGraphNode*>(item);
-    if (object) {
-      ui->propertySheet->setObject(object->object());
-      return;
+  QList<QGraphicsItem*> items = scene->selectedItems();
+
+  qDebug() << "\n" << Q_FUNC_INFO << items.count();
+
+  if (items.count() == 0) {
+    ui->actionCut->setDisabled(true);
+    ui->actionCopy->setDisabled(true);
+    ui->actionDelete->setDisabled(true);
+  }
+  else {
+
+    // Update graph action states
+
+    ui->actionCut->setDisabled(false);
+    ui->actionCopy->setDisabled(false);
+    ui->actionDelete->setDisabled(false);
+
+    ui->actionPaste->setDisabled(true);
+
+    const QMimeData* mimeData = QApplication::clipboard()->mimeData();
+    for (auto format : mimeData->formats()) {
+      if (format == ObjectGraph::SERIALIZED_GRAPH_MIME_TYPE) {
+        ui->actionPaste->setDisabled(false);
+        break;
+      }
+    }
+
+    if (items.count() == 1) {
+      QGraphicsItem* item = items.first();
+      ObjectGraphNode* node = dynamic_cast<ObjectGraphNode*>(item);
+      if (node) {
+        ui->propertySheet->setObject(node->object());
+        return;
+      }
     }
   }
+
   ui->propertySheet->setObject((QObject*)nullptr);
 }
 
 bool QObjectGraphEditorApp::open(const QString& fileName) {
+
   QFile file(fileName);
+
   if (file.open(QIODevice::ReadOnly)) {
+
+    QSet<QUuid> nodeUuids;
+
+    QPointF centroid;
+
     QDataStream in(&file);
+
     _graph->clear();
-    if (_graph->read(in)) {
+    if (_graph->deserialize(in,false,false,ObjectGraph::AbsolutePlacement,centroid,nodeUuids)) {
       _graph->setFileName(fileName);
       ui->objectView->onRecenterPressed();
       return true;
@@ -200,10 +249,16 @@ bool QObjectGraphEditorApp::open(const QString& fileName) {
 
 bool QObjectGraphEditorApp::save(const QString& fileName) {
   QFile file(fileName);
+
   if (file.open(QIODevice::WriteOnly)) {
+
     QDataStream out(&file);
+
     ui->objectView->scene()->clearSelection();
-    if (_graph->write(out)) {
+
+    QSet<QUuid> nodeUuids;
+
+    if (_graph->serialize(out,nodeUuids,true)) {
       _graph->setFileName(fileName);
       return true;
     }
@@ -277,39 +332,51 @@ void QObjectGraphEditorApp::recentModels() {
 }
 
 void QObjectGraphEditorApp::closeModel() {
-
+  _graph->clear();
 }
 
 void QObjectGraphEditorApp::exitApp() {
-
+  closeModel();
 }
 
-void QObjectGraphEditorApp::undo() {
 
+void QObjectGraphEditorApp::onCutAction() {
+  qDebug() << "\n" << Q_FUNC_INFO;
+  _graph->onCutAction();
 }
 
-void QObjectGraphEditorApp::redo() {
+void QObjectGraphEditorApp::onCopyAction() {
+  qDebug() << "\n" << Q_FUNC_INFO;
+  _graph->onCopyAction();
 
+  ui->actionPaste->setDisabled(true);
+  const QMimeData* mimeData = QApplication::clipboard()->mimeData();
+  QStringList formats = mimeData->formats();
+  for (auto format : formats) {
+    if (format == ObjectGraph::SERIALIZED_GRAPH_MIME_TYPE) {
+      ui->actionPaste->setDisabled(false);
+      break;
+    }
+  }
 }
 
-void QObjectGraphEditorApp::cut() {
-
+void QObjectGraphEditorApp::onPasteAction() {
+  qDebug() << "\n" << Q_FUNC_INFO;
+  _graph->onPasteAction();
 }
 
-void QObjectGraphEditorApp::copy() {
-
+void QObjectGraphEditorApp::onDeleteAction() {
+  qDebug() << "\n" << Q_FUNC_INFO;
+  _graph->onDeleteAction();
 }
 
-void QObjectGraphEditorApp::paste() {
-
-}
-
-void QObjectGraphEditorApp::selectAll() {
-
+void QObjectGraphEditorApp::onSelectAllAction() {
+  qDebug() << "\n" << Q_FUNC_INFO;
+  _graph->onSelectAllAction();
 }
 
 void QObjectGraphEditorApp::toggleFullScreen() {
-
+  qDebug() << "\n" << Q_FUNC_INFO;
 }
 
 void QObjectGraphEditorApp::about() {

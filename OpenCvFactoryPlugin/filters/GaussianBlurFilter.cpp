@@ -6,7 +6,7 @@
 REGISTER_CLASS(GaussianBlurFilter)
 
 GaussianBlurFilter::GaussianBlurFilter(QObject* parent)
-  : AbstractOpenCvObject(parent)
+  : QObject(parent)
   , _kernelSizeX(3)
   , _kernelSizeY(3)
   , _sigmaX(0.0)
@@ -15,47 +15,15 @@ GaussianBlurFilter::GaussianBlurFilter(QObject* parent)
 {
 }
 
-void GaussianBlurFilter::setKernelSizeX(int kernelSizeX) {
-  if (kernelSizeX < 1) kernelSizeX = 3;
-  _kernelSizeX = 1 + (kernelSizeX / 2) * 2;
-  update();
-}
-
-void GaussianBlurFilter::setKernelSizeY(int kernelSizeY) {
-  if (kernelSizeY < 1) kernelSizeY = 3;
-  _kernelSizeY = 1 + (kernelSizeY / 2) * 2;
-  update();
-}
-
-void GaussianBlurFilter::setSigmaX(double sigmaX) {
-  _sigmaX = sigmaX;
-  update();
-}
-
-void GaussianBlurFilter::setSigmaY(double sigmaY) {
-  _sigmaY = sigmaY;
-  update();
-}
-
-void GaussianBlurFilter::setBorderType(BorderType borderType) {
-  _borderType = borderType;
-  update();
-}
-
-void GaussianBlurFilter::in(const cv::Mat &mat) {
-  _input = mat;
-  update();
-}
-
-void GaussianBlurFilter::update() {
-  if (!_input.empty()) {
-    cv::Mat dst;
+void GaussianBlurFilter::in(const MatEvent &input) {
+  if (!input.mat().empty()) {
+    cv::Mat output;
     if (_kernelSizeX >= 3 || _kernelSizeY >= 3) {
-      cv::GaussianBlur(_input, dst, cv::Size(_kernelSizeX,_kernelSizeY), _sigmaX, _sigmaY, (cv::BorderTypes)_borderType);
+      cv::GaussianBlur(input.mat(), output, cv::Size(_kernelSizeX,_kernelSizeY), _sigmaX, _sigmaY, (cv::BorderTypes)_borderType);
     }
     else {
-      _input.copyTo(dst);
+      input.mat().copyTo(output);
     }
-    emit out(dst);
+    emit out(MatEvent(output,input.timestamp()));
   }
 }

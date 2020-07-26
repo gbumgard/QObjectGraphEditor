@@ -56,26 +56,35 @@ public:
 
   void deviceIndex(int index);
 
-  bool filterUnmatchedPixels() const { return mFilterUnmatchedPixels; }
-  void filterUnmatchedPixels(bool filterUnmatchedPixels) { mFilterUnmatchedPixels = filterUnmatchedPixels; }
+  bool filterUnmatchedPixels() const { return _filterUnmatchedPixels; }
+  void filterUnmatchedPixels(bool filterUnmatchedPixels) { _filterUnmatchedPixels = filterUnmatchedPixels; }
 
-  bool generateHighDef() const { return mGenerateHighDef; }
-  void generateHighDef(bool generateHighDef) { mGenerateHighDef = generateHighDef; }
+  bool generateHighDef() const { return _generateHighDef; }
+  void generateHighDef(bool generateHighDef) { _generateHighDef = generateHighDef; }
 
-  bool mirror() const { return mirror_; }
-  void mirror(bool mirror) { mirror_ = mirror; }
+  bool mirror() const { return _mirror; }
+  void mirror(bool mirror) { _mirror = mirror; }
 
-  QString serial() const { return QString(serial_.c_str()); }
+  QString serial() const { return QString(_serial.c_str()); }
 
 public slots:
 
 signals:
 
-  void depth(const TaggedMat& mat);
-  void color(const TaggedMat& mat);
-  void ir(const TaggedMat& mat);
-  void undistortedDepth(const TaggedMat& mat);
-  void registeredColor(const TaggedMat& mat);
+#if 0
+  void depth(const MatEvent& mat);
+  void color(const MatEvent& mat);
+  void ir(const MatEvent& mat);
+  void undistortedDepth(const MatEvent& mat);
+  void registeredColor(const MatEvent& mat);
+#endif
+
+  QVARIANT_PAYLOAD(MatEvent) void depth(const QVariant& mat);
+  QVARIANT_PAYLOAD(MatEvent) void color(const QVariant& mat);
+  QVARIANT_PAYLOAD(MatEvent) void ir(const QVariant& mat);
+  QVARIANT_PAYLOAD(MatEvent) void undistortedDepth(const QVariant& mat);
+  QVARIANT_PAYLOAD(MatEvent) void registeredColor(const QVariant& mat);
+  QVARIANT_PAYLOAD(MatEvent) void mat(const QVariant& variant);
 
 
 #ifdef WITH_PCL
@@ -118,9 +127,9 @@ private:
 
 private:
 
-  QMutex mMutex;
-  QWaitCondition mWaitCondition;
-  bool mStop;
+  QMutex _mutex;
+  QWaitCondition _waitCondition;
+  bool _stop;
 
   cv::Mat mDepthMap;
   cv::Mat mIrCameraImage;
@@ -130,36 +139,36 @@ private:
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr mPointCloudMap;
 #endif
 
-  bool mUpdateDepthMapRequired;
-  bool mUpdateIrCameraImageRequired;
-  bool mUpdateBGRCameraImageRequired;
+  bool _updateDepthMapRequired;
+  bool _updateIrCameraImageRequired;
+  bool _updateBGRCameraImageRequired;
   bool mUpdateUndistortedDepthRequired;
   bool mUpdateRegisteredColorRequired;
-  bool mUpdatePointCloudMapRequired;
+  bool _updatePointCloudMapRequired;
 
-  libfreenect2::Freenect2 freenect2_;
-  libfreenect2::Freenect2Device * dev_ = 0;
-  libfreenect2::PacketPipeline * pipeline_ = 0;
-  libfreenect2::Registration * registration_ = 0;
-  libfreenect2::SyncMultiFrameListener listener_;
-  libfreenect2::Logger * logger_ = nullptr;
-  libfreenect2::FrameMap frames_;
-  libfreenect2::Frame mUndistortedDepthFrame;
-  libfreenect2::Frame mRegisteredColorFrame;
-  libfreenect2::Frame big_mat_;
+  libfreenect2::Freenect2 _freenect2;
+  libfreenect2::Freenect2Device * _dev = 0;
+  libfreenect2::PacketPipeline * _pipeline = 0;
+  libfreenect2::Registration * _registration = 0;
+  libfreenect2::SyncMultiFrameListener _listener;
+  libfreenect2::Logger * _logger = nullptr;
+  libfreenect2::FrameMap _frames;
+  libfreenect2::Frame _undistortedDepthFrame;
+  libfreenect2::Frame _registeredColorFrame;
+  libfreenect2::Frame _bigMat;
 
-  Eigen::Matrix<float,512,1> colmap;
-  Eigen::Matrix<float,424,1> rowmap;
+  Eigen::Matrix<float,512,1> _colmap;
+  Eigen::Matrix<float,424,1> _rowmap;
 
-  std::string serial_;
+  std::string _serial;
 
-  int map_[512 * 424];
+  int _map[512 * 424];
 
-  float qnan_;
+  float _qnan;
 
-  bool mFilterUnmatchedPixels;
-  bool mGenerateHighDef;
-  bool mirror_;
+  bool _filterUnmatchedPixels;
+  bool _generateHighDef;
+  bool _mirror;
 
 };
 

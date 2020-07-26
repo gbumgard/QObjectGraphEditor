@@ -2,8 +2,8 @@
 
 const QString SlotMimeData::MIME_TYPE("application/x-slot-method-index");
 
-SlotMimeData::SlotMimeData(int objectId, int methodIndex, ObjectGraphEdge* connectionPath)
-  : MethodMimeData(objectId, methodIndex, connectionPath)
+SlotMimeData::SlotMimeData(const QUuid& objectUuid, const QString& methodSignature, ObjectGraphEdge* connectionPath)
+  : MethodMimeData(objectUuid, methodSignature, connectionPath)
 {
 }
 

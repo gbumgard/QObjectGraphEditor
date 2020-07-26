@@ -10,9 +10,23 @@
 #include <QDir>
 #include <QMetaClassInfo>
 #include <QDebug>
+#include <QVariant>
+
+#include "Event.h"
+#include "QVariantEvent.h"
+
 #include <iostream>
+#include "ObjectModel.h"
 
 #define ObjectFactoryPlugin_iid "com.larkwoodlabs.qt.plugins.ObjectFactory"
+
+#ifndef Q_MOC_RUN
+#define QVARIANT_PAYLOAD(...)
+#else
+#define QVARIANT_PAYLOAD(a) a
+#endif
+
+Q_DECLARE_METATYPE(bool*)
 
 class OBJECTMODELSHARED_EXPORT ObjectFactory : public QObject
 {
@@ -20,22 +34,24 @@ class OBJECTMODELSHARED_EXPORT ObjectFactory : public QObject
 
 public:
 
-  ObjectFactory(QObject *parent = 0) : QObject(parent) {}
+  ObjectFactory(QObject *parent = 0) : QObject(parent) {
+    qRegisterMetaType<QVariantEvent>();
+  }
 
   virtual ~ObjectFactory() {}
 
   static QObject* create(const QString& name) {
-    qDebug() << Q_FUNC_INFO;
+    qDebug() << Q_FUNC_INFO << name;
     if (metaObjectMap().contains(name)) {
       QMetaObject& metaObject = metaObjectMap()[name];
       QObject* qobject = metaObject.newInstance();
+
       if (!qobject) {
         std::cerr << Q_FUNC_INFO
                   << " could not create "
                   << name.toLatin1().constData()
                   << " instance - is the constructor method tagged with Q_INVOKABLE?"
                   << std::endl;
-        return nullptr;
       }
       return qobject;
     }
@@ -53,6 +69,7 @@ public:
   }
 
   static bool removeObjectType(const QString& className) {
+    qDebug() << Q_FUNC_INFO << className;
     return metaObjectMap().remove(className) == 1;
   }
 
@@ -74,7 +91,6 @@ public:
       QDir pluginDir(path);
       foreach (QString fileName, pluginDir.entryList(QDir::Files)) {
         QString path = pluginDir.absoluteFilePath(fileName);
-        qDebug() << Q_FUNC_INFO << path;
         QPluginLoader pluginLoader(path);
         pluginLoader.load();
         bool isLoaded = pluginLoader.isLoaded();
@@ -96,6 +112,11 @@ public:
       }
     }
     return count;
+  }
+
+  static long nextSequenceNumber() {
+    static long next = 1;
+    return next++;
   }
 
 protected:

@@ -66,7 +66,7 @@ void TemporalMedianFilter::update() {
 
   if (currentImages.size() > (unsigned)currentAperatureSize / 2) {
     if (currentImages.size() >= (unsigned)currentAperatureSize) {
-      cv::Mat median(currentHeight, currentWidth, CV_8UC1, cv::Scalar(DBL_MAX));
+      cv::Mat median(currentHeight, currentWidth, CV_8UC1, cv::Scalar(0));
       int* values = new int[currentAperatureSize];
       for (int x = 0; x < currentWidth; x++) {
         for (int y = 0; y < currentHeight; y++) {

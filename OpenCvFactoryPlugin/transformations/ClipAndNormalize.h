@@ -7,18 +7,20 @@
 #include "AbstractOpenCvObject.h"
 #include <opencv2/core.hpp>
 
-class ClipAndNormalize : public QObject
+class ClipAndNormalize : public AbstractOpenCvObject
 {
 
   Q_OBJECT
 
   Q_CLASSINFO("class-alias","Clip and Normalize")
   Q_CLASSINFO("directory","OpenCV/Transformations")
+  Q_CLASSINFO("slot-order","src(QVariant),min(double),max(double)")
+  Q_CLASSINFO("signal-order","dst(QVariant)")
 
-  Q_PROPERTY(double minimum READ minimum WRITE minimum)
-  Q_PROPERTY(double maximum READ maximum WRITE maximum)
-  Q_PROPERTY(double range READ range WRITE range)
-  Q_PROPERTY(double offset READ offset WRITE offset)
+  Q_PROPERTY(double Minimum READ min WRITE min NOTIFY minChanged STORED true)
+  Q_PROPERTY(double Maximum READ max WRITE max NOTIFY maxChanged STORED true)
+  Q_PROPERTY(double Range READ range WRITE range STORED true)
+  Q_PROPERTY(double Offset READ offset WRITE offset STORED true)
 
 public:
 
@@ -26,23 +28,28 @@ public:
 
   virtual ~ClipAndNormalize() {}
 
-  double minimum() const { return _minimum; }
-  double maximum() const { return _maximum; }
+  double min() const { return _minimum; }
+  double max() const { return _maximum; }
+
   double range() const { return _range; }
+  void range(double value);
+
   double offset() const { return _offset; }
+  void offset(double value);
 
 public slots:
 
-  void in(const TaggedMat& mat);
+  QVARIANT_PAYLOAD(MatEvent) void src(const QVariant& srcEvent);
 
-  void minimum(double value);
-  void maximum(double value);
-  void range(double value);
-  void offset(double value);
+  void min(double value);
+  void max(double value);
 
 signals:
 
-  void out(const TaggedMat& mat);
+  QVARIANT_PAYLOAD(MatEvent) void dst(const QVariant& dstEvent);
+
+  void minChanged(double min);
+  void maxChanged(double max);
 
 protected:
 
@@ -50,7 +57,6 @@ protected:
   double _maximum;
   double _range;
   double _offset;
-
 };
 
 #endif // CLIPANDNORMALIZE_H

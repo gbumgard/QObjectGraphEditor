@@ -23,7 +23,20 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    AddEdgeCommand.cpp \
+    AddNodeCommand.cpp \
     ConnectionPoint.cpp \
+    CutCommand.cpp \
+    DeleteCommand.cpp \
+    GraphicsItemMimeData.cpp \
+    MoveNodesCommand.cpp \
+    ObjectGraphUtil.cpp \
+    PasteCommand.cpp \
+    RoundedPolygonItem.cpp \
+    SetNodeSizeCommand.cpp \
+    SetPropertyCommand.cpp \
+    SizeGripper.cpp \
+    SizeGripperWidget.cpp \
     SlotConnectionPoint.cpp \
     MethodMimeData.cpp \
     SlotMimeData.cpp \
@@ -34,6 +47,20 @@ SOURCES += \
     ObjectGraphEdge.cpp
 
 HEADERS += \
+    AddEdgeCommand.h \
+    AddNodeCommand.h \
+    CutCommand.h \
+    DeleteCommand.h \
+    GraphicsItemMimeData.h \
+    MoveNodesCommand.h \
+    ObjectGraphUtil.h \
+    PasteCommand.h \
+    RoundedPolygonItem.h \
+    SetNodeSizeCommand.h \
+    SetPropertyCommand.h \
+    SizeGripper.h \
+    SizeGripperWidget.h \
+    objectgraphutil_global.h \
     objectview_global.h \
     ConnectionPoint.h \
     SlotConnectionPoint.h \
