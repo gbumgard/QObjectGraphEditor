@@ -1,12 +1,12 @@
 #include "renderers/DrawContours.h"
-#include "OpenCvFactoryPlugin.h"
+#include "ObjectModel.h"
 #include <opencv2/imgproc.hpp>
 #include <QDebug>
 
 REGISTER_CLASS(DrawContours)
 
 DrawContours::DrawContours(QObject* parent)
-  : ThreadedObject(parent)
+  : AbstractOpenCvObject(parent)
   , _image()
   , _contours()
   , _contourIndex(-1)
@@ -14,52 +14,47 @@ DrawContours::DrawContours(QObject* parent)
   , _thickness(1)
   , _lineType(8)
 {
-  start();
 }
 
 DrawContours::~DrawContours() {
 }
 
-void DrawContours::image(const cv::Mat &mat) {
-  UpdateLock lock(this);
-  _image = mat;
-}
-
-void DrawContours::contours(const std::vector<std::vector<cv::Point> > &contours) {
-  UpdateLock lock(this);
-  _contours = contours;
+void DrawContours::image(const QVariant &variant) {
+    if (variant.userType() == MatEvent::userType()) {
+        ObjectModel::setObjectStatus(this,ObjectModel::STATUS_OK,"OK");
+        MatEvent matEvent = qvariant_cast<MatEvent>(variant);
+        _image = matEvent.mat();
+    }
+    else {
+        ObjectModel::setObjectStatus(this,ObjectModel::STATUS_INVALID_SLOT_ARGUMENT_FORMAT,"Unsupported SRC");
+    }
 }
 
 void DrawContours::contourIndex(int index) {
-  UpdateLock lock(this);
   _contourIndex = index;
 }
 
 void DrawContours::color(const QColor &color) {
-  UpdateLock lock(this);
   _color = color;
 }
 
 void DrawContours::thickness(int thickness) {
-  UpdateLock lock(this);
   _thickness = thickness;
 }
 
 void DrawContours::lineType(int lineType) {
-  UpdateLock lock(this);
   _lineType = lineType;
 }
 
-void DrawContours::update() {
+void DrawContours::contours(const Contours &contours) {
+  _contours = contours;
   cv::Mat currentImage;
-  std::vector<std::vector<cv::Point> > currentContours;
+  Contours currentContours;
   int currentIndex;
   QColor currentColor;
   int currentThickness;
   int currentLineType;
   {
-    WaitForUpdateLock lock(this);
-    if (_stop) return;
     currentImage = _image.clone();
     _image = cv::Mat();
     if (!currentImage.empty()) {
@@ -77,5 +72,5 @@ void DrawContours::update() {
   currentColor.getRgb(&r, &g, &b);
   cv::Scalar color(b,g,r);
   cv::drawContours(currentImage,currentContours,currentIndex,color,currentThickness,currentLineType);
-  emit out(currentImage);
+  emit out(QVariant::fromValue(MatEvent(currentImage)));
 }

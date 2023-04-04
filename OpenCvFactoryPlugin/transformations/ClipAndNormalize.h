@@ -1,10 +1,10 @@
 #ifndef CLIPANDNORMALIZE_H
 #define CLIPANDNORMALIZE_H
 
-#include "OpenCvFactoryPlugin.h"
-
 #include <QObject>
+#include <QVariant>
 #include "AbstractOpenCvObject.h"
+#include "MatEvent.h"
 #include <opencv2/core.hpp>
 
 class ClipAndNormalize : public AbstractOpenCvObject

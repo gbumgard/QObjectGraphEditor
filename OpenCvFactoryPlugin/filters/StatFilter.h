@@ -1,11 +1,12 @@
 #ifndef STATFILTER_H
 #define STATFILTER_H
 
+#include "AbstractOpenCvObject.h"
 #include <QObject>
 
 #include <opencv2/core.hpp>
 
-class StatFilter : public QObject
+class StatFilter : public AbstractOpenCvObject
 {
 
   Q_OBJECT
@@ -13,7 +14,7 @@ class StatFilter : public QObject
   Q_CLASSINFO("class-alias","Statistical Filter")
   Q_CLASSINFO("directory","OpenCV/Filters")
 
-  Q_PROPERTY(bool enable READ enable WRITE enable)
+  Q_PROPERTY(bool enable READ enable WRITE enable NOTIFY enableChanged)
 
 public:
 
@@ -30,15 +31,17 @@ public:
 
 public slots:
 
-  void in(const cv::Mat& mat);
+  QVARIANT_PAYLOAD(MatEvent) void in(const QVariant& dstEvent);
 
 signals:
 
-  void mean(const cv::Mat& mat);
+  QVARIANT_PAYLOAD(MatEvent) void mean(const QVariant& dstEvent);
 
-  void variance(const cv::Mat& mat);
+  QVARIANT_PAYLOAD(MatEvent) void variance(const QVariant& dstEvent);
 
-  void filtered(const cv::Mat& mat);
+  QVARIANT_PAYLOAD(MatEvent) void filtered(const QVariant& dstEvent);
+
+  void enableChanged(bool);
 
 protected:
 

@@ -1,12 +1,13 @@
 #ifndef MEDIANFILTER_H
 #define MEDIANFILTER_H
 
-#include "OpenCvFactoryPlugin.h"
-
 #include <QObject>
+#include <QVariant>
+#include "MatEvent.h"
+#include "AbstractOpenCvObject.h"
 #include <opencv2/core.hpp>
 
-class MedianBlurFilter : public QObject
+class MedianBlurFilter : public AbstractOpenCvObject
 {
 
   Q_OBJECT
@@ -40,13 +41,13 @@ public:
 
 public slots:
 
-  void in(const MatEvent& mat);
+  QVARIANT_PAYLOAD(MatEvent) void src(const QVariant& srcEvent);
 
   void setAperatureSize(AperatureSize aperatureSize);
 
 signals:
 
-  void out(const MatEvent& output);
+  QVARIANT_PAYLOAD(MatEvent) void dst(const QVariant& dstEvent);
 
 protected:
 

@@ -1,6 +1,5 @@
-#include "OpenCvFactoryPlugin.h"
 #include "KinectV2SensorAsync.h"
-
+#include "ObjectModel.h"
 #include <QMutexLocker>
 #include <QMetaObject>
 #include <QMetaMethod>
@@ -15,7 +14,7 @@ REGISTER_CLASS(KinectV2SensorAsync)
 std::set<std::string> KinectV2SensorAsync::_openDeviceSerialNumbers;
 
 KinectV2SensorAsync::KinectV2SensorAsync(QObject* parent)
-  : QObject(parent)
+  : AbstractOpenCvObject(parent)
   , libfreenect2::SyncMultiFrameListener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth)
   , _updateDepthMapRequired(false)
   , _updateIrCameraImageRequired(false)

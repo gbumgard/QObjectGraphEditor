@@ -14,8 +14,8 @@ TEMPLATE = lib
 CONFIG += plugin
 
 DESTDIR = ../plugins
-
-LIBS += -L/usr/local/lib \
+# -lopencv_world \
+LIBS += -L/usr/local/lib -L/usr/lib/x86_64-linux-gnu \
   -lopencv_alphamat        -lopencv_cudawarping    -lopencv_imgcodecs            -lopencv_shape \
   -lopencv_aruco           -lopencv_cudev          -lopencv_img_hash             -lopencv_stereo \
   -lopencv_bgsegm          -lopencv_cvv            -lopencv_imgproc              -lopencv_stitching \
@@ -28,7 +28,7 @@ LIBS += -L/usr/local/lib \
   -lopencv_cudacodec       -lopencv_features2d     -lopencv_photo                -lopencv_video \
   -lopencv_cudafeatures2d  -lopencv_flann          -lopencv_plot                 -lopencv_videostab \
   -lopencv_cudafilters     -lopencv_freetype       -lopencv_quality              -lopencv_viz \
-  -lopencv_cudaimgproc     -lopencv_fuzzy          -lopencv_rapid                -lopencv_world \
+  -lopencv_cudaimgproc     -lopencv_fuzzy          -lopencv_rapid                \
   -lopencv_cudalegacy      -lopencv_gapi           -lopencv_reg                  -lopencv_xfeatures2d \
   -lopencv_cudaobjdetect   -lopencv_hdf            -lopencv_rgbd                 -lopencv_ximgproc \
   -lopencv_cudaoptflow     -lopencv_hfs            -lopencv_saliency             -lopencv_xobjdetect \
@@ -66,8 +66,9 @@ DEFINES += QT_DEPRECATED_WARNINGS \
 INCLUDEPATH += \
   $$PWD/../ObjectModel
 
+INCLUDEPATH += /usr/local/include
 INCLUDEPATH += /usr/include/eigen3
-INCLUDEPATH += /usr/include/pcl-1.8
+INCLUDEPATH += /usr/include/pcl-1.10
 INCLUDEPATH += /usr/include/libusb-1.0
 INCLUDEPATH += /usr/local/include/opencv4
 
@@ -81,22 +82,65 @@ DEPENDPATH += \
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 SOURCES += \
+  AccumulateChanges.cpp \
   OpenCvFactoryPlugin.cpp \
   common/AbstractOpenCvObject.cpp \
+  imageprocessing/MatCompare.cpp \
+  detectors/CannyLineDetector.cpp \
+  detectors/FindContours.cpp \
+  renderers/DrawContours.cpp \
   sensors/KinectV2SensorAsync.cpp \
   transformations/ClipAndNormalize.cpp \
-  viewers/MatViewer.cpp
+  transformations/ConvertScaleAbs.cpp \
+  transformations/MorphologyTransformation.cpp \
+  viewers/MatViewer.cpp \
+  operations/AbsDifference.cpp \
+  operations/AddWeightedOperation.cpp \
+  operations/MaskAndCopyOperation.cpp \
+  imageprocessing/motionanalysis/AccumulateWeighted.cpp \
+  imageprocessing/ApplyColorMap.cpp \
+  imageprocessing/ApplyTerrainColorMap.cpp \
+  filters/InRangeFilter.cpp \
+  filters/MedianBlurFilter.cpp \
+  filters/MedianFilter3D.cpp \
+  filters/RunningStatistics.cpp \
+  filters/ThresholdFilter.cpp \
+  filters/StatFilter.cpp \
+  filters/BilateralFilter.cpp \
+  viewers/HeightMapViewer.cpp \
+
 
 #sensors/KinectV2Sensor.cpp \
 
 HEADERS += \
+  AccumulateChanges.h \
   OpenCvFactoryPlugin.h \
   common/AbstractOpenCvObject.h \
   common/MatEvent.h \
   common/ScalarEvent.h \
+  detectors/CannyLineDetector.h \
+  detectors/FindContours.h \
+  renderers/DrawContours.h \
+  imageprocessing/MatCompare.h \
   sensors/KinectV2SensorAsync.h \
   transformations/ClipAndNormalize.h \
-  viewers/MatViewer.h
+  transformations/ConvertScaleAbs.h \
+  transformations/MorphologyTransformation.h \
+  viewers/MatViewer.h \
+  operations/AbsDifference.h \
+  operations/AddWeightedOperation.h \
+  operations/MaskAndCopyOperation.h \
+  imageprocessing/motionanalysis/AccumulateWeighted.h \
+  imageprocessing/ApplyColorMap.h \
+  imageprocessing/ApplyTerrainColorMap.h \
+  filters/InRangeFilter.h \
+  filters/MedianBlurFilter.h \
+  filters/MedianFilter3D.h \
+  filters/RunningStatistics.h \
+  filters/ThresholdFilter.h \
+  filters/StatFilter.h \
+  filters/BilateralFilter.h \
+  viewers/HeightMapViewer.h \
 
 #sensors/KinectV2Sensor.h \
 
@@ -104,7 +148,6 @@ HEADERS += \
 #    OpenCvFactoryPlugin.cpp \
 #    common/AbstractOpenCvObject.cpp \
 #    common/MatFingerprint.cpp \
-#    filters/BilateralFilter.cpp \
 #    filters/DepthFilterV2.cpp \
 #    filters/InRangeFilter.cpp \
 #    filters/MedianBlurFilter.cpp \
@@ -131,16 +174,12 @@ HEADERS += \
 #    utility/ThreadDecoupler.cpp \
 #    transformations/MorphologyTransformation.cpp \
 #    sensors/OpenNiSensor.cpp \
-#    detectors/CannyLineDetector.cpp \
 #    common/ThreadedObject.cpp \
 #    operations/MirrorMaskOperation.cpp \
-#    operations/MaskAndCopyOperation.cpp \
 #    imageprocessing/AnisotropicDiffusion.cpp \
 #    sensors/KinectV2Sensor.cpp \
 #    operations/SubtractOperation.cpp \
 #    utility/MatQueue.cpp \
-#    detectors/FindContours.cpp \
-#    renderers/DrawContours.cpp \
 #    filters/TemporalMedianFilter.cpp \
 #    sensors/KinectV1Sensor.cpp \
 #    imageprocessing/ApplyColorMap.cpp \

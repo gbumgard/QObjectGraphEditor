@@ -1,7 +1,7 @@
 #ifndef Mat3DViewer_H
 #define Mat3DViewer_H
 
-#include "OpenCvFactoryPlugin.h"
+#include "AbstractOpenCvObject.h"
 
 #include <QWidget>
 #include <QGridLayout>
@@ -12,12 +12,13 @@
 #include <QSurfaceDataProxy>
 #include <QHeightMapSurfaceDataProxy>
 #include <QSurface3DSeries>
+#include <QtDataVisualization>
 
 #include <opencv2/core.hpp>
 
-using namespace QtDataVisualization;
+//using namespace QtDataVisualization;
 
-class HeightMapViewer : public QObject
+class HeightMapViewer : public AbstractOpenCvObject
 {
   Q_OBJECT
 
@@ -26,6 +27,7 @@ class HeightMapViewer : public QObject
 
   Q_PROPERTY(QString caption READ caption WRITE caption)
   Q_PROPERTY(bool flipHorizontalGrid READ flipHorizontalGrid WRITE flipHorizontalGrid)
+  Q_PROPERTY(bool flipZAxis READ flipZAxis WRITE flipZAxis)
   Q_PROPERTY(bool flatShadingEnabled READ flatShadingEnabled WRITE flatShadingEnabled)
   Q_PROPERTY(DrawMode drawMode READ drawMode WRITE drawMode)
   Q_PROPERTY(bool enableTexture READ enableTexture WRITE enableTexture)
@@ -55,6 +57,9 @@ public:
   bool flipHorizontalGrid() const { return _graph->flipHorizontalGrid(); }
   void flipHorizontalGrid(bool flipHorizontalGrid) { _graph->setFlipHorizontalGrid(flipHorizontalGrid); }
 
+  bool flipZAxis() const { return _flipZAxis; }
+  void flipZAxis(bool flip) { _flipZAxis = flip; }
+
   bool flatShadingEnabled() const { return _heightMapSeries->isFlatShadingEnabled(); }
   void flatShadingEnabled(bool flatShadingEnabled) { _heightMapSeries->setFlatShadingEnabled(flatShadingEnabled); }
 
@@ -72,8 +77,8 @@ public:
 
 public slots:
 
-  void map(const MatEvent& image);
-  void texture(const MatEvent& image);
+  QVARIANT_PAYLOAD(MatEvent) void map(const QVariant& dstEvent);
+  QVARIANT_PAYLOAD(MatEvent) void texture(const QVariant& dstEvent);
 
 private:
 
@@ -81,6 +86,7 @@ private:
   cv::Size _imageSize;
   QImage _texture;
   bool _enableTexture;
+  bool _flipZAxis;
 
   Q3DSurface* _graph;
   QHeightMapSurfaceDataProxy* _heightMapProxy;

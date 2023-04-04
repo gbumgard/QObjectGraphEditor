@@ -1,37 +1,40 @@
 #include "MaskAndCopyOperation.h"
-#include "OpenCvFactoryPlugin.h"
+#include "ObjectModel.h"
 
 #include <opencv2/imgproc.hpp>
 
 REGISTER_CLASS(MaskAndCopyOperation)
 
 MaskAndCopyOperation::MaskAndCopyOperation(QObject* parent)
-  : QObject(parent)
+  : AbstractOpenCvObject(parent)
 {
 }
 
-void MaskAndCopyOperation::in(const cv::Mat &mat) {
-  _input = mat;
-  if (_mask.empty()) {
-    _mask = cv::Mat(cv::Size(_input.cols, _input.rows), CV_8U, cv::Scalar(255));
-  }
-  update();
-}
-
-void MaskAndCopyOperation::mask(const cv::Mat &mat) {
-  _mask = mat;
-//  update();
-}
-
-void MaskAndCopyOperation::update() {
-  if (!_input.empty() && !_mask.empty() &&
-      _input.cols == _mask.cols &&
-      _input.rows == _mask.rows) {
-    if (_input.cols != _output.cols || _input.rows != _output.rows) {
-      _output = cv::Mat(cv::Size(_input.cols, _input.rows), _input.type(), cv::Scalar(0));
+void MaskAndCopyOperation::in(const QVariant &variant) {
+    if (variant.userType() == MatEvent::userType()) {
+        ObjectModel::setObjectStatus(this,ObjectModel::STATUS_OK,"OK");
+        MatEvent matEvent = qvariant_cast<MatEvent>(variant);
+        _input = matEvent.mat();
+        if (_mask.empty()) {
+            _mask = cv::Mat(cv::Size(_input.cols, _input.rows), CV_8U, cv::Scalar(255));
+        }
+        _input.copyTo(_output,_mask);
+        emit out(QVariant::fromValue(MatEvent(_output,matEvent.timestamp())));
+        emit maskUsed(QVariant::fromValue(MatEvent(_mask,matEvent.timestamp())));
     }
-    _input.copyTo(_output,_mask);
-    emit out(_output);
-    emit maskUsed(_mask);
-  }
+    else {
+        ObjectModel::setObjectStatus(this,ObjectModel::STATUS_INVALID_SLOT_ARGUMENT_FORMAT,"Unsupported SRC");
+    }
 }
+
+void MaskAndCopyOperation::mask(const QVariant &variant) {
+    if (variant.userType() == MatEvent::userType()) {
+        ObjectModel::setObjectStatus(this,ObjectModel::STATUS_OK,"OK");
+        MatEvent matEvent = qvariant_cast<MatEvent>(variant);
+        _mask = matEvent.mat();
+    }
+    else {
+        ObjectModel::setObjectStatus(this,ObjectModel::STATUS_INVALID_SLOT_ARGUMENT_FORMAT,"Unsupported SRC");
+    }
+}
+

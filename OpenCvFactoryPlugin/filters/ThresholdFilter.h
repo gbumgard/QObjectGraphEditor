@@ -1,23 +1,24 @@
 #ifndef THRESHOLD_H
 #define THRESHOLD_H
 
-#include <OpenCvFactoryPlugin.h>
 #include <QObject>
 #include <QLoggingCategory>
+#include <QVariant>
+#include "AbstractOpenCvObject.h"
 #include <opencv2/imgproc.hpp>
 
-class ThresholdFilter : public QObject
+class ThresholdFilter : public AbstractOpenCvObject
 {
   Q_OBJECT
 
-  Q_PROPERTY(FilterType filterType READ filterType WRITE setFilterType)
-  Q_PROPERTY(double threshold READ threshold WRITE threshold)
-  Q_PROPERTY(double maximum READ maximum WRITE maximum)
+  Q_PROPERTY(FilterType filterType READ filterType WRITE setFilterType NOTIFY filterTypeChanged)
+  Q_PROPERTY(double threshold READ threshold WRITE threshold NOTIFY thresholdChanged)
+  Q_PROPERTY(double maximum READ maximum WRITE maximum NOTIFY maximumChanged)
 
-  Q_PROPERTY(bool enableDebugMsgs READ enableDebugMsgs WRITE setEnableDebugMsgs)
-  Q_PROPERTY(bool enableInfoMsgs READ enableInfoMsgs WRITE setEnableInfoMsgs)
-  Q_PROPERTY(bool enableWarningMsgs READ enableWarningMsgs WRITE setEnableWarningMsgs)
-  Q_PROPERTY(bool enableCriticalMsgs READ enableCriticalMsgs WRITE setEnableCriticalMsgs)
+  Q_PROPERTY(bool enableDebugMsgs READ enableDebugMsgs WRITE setEnableDebugMsgs NOTIFY enableDebugMsgsChanged)
+  Q_PROPERTY(bool enableInfoMsgs READ enableInfoMsgs WRITE setEnableInfoMsgs NOTIFY enableInfoMsgsChanged)
+  Q_PROPERTY(bool enableWarningMsgs READ enableWarningMsgs WRITE setEnableWarningMsgs NOTIFY enableWarningMsgsChanged)
+  Q_PROPERTY(bool enableCriticalMsgs READ enableCriticalMsgs WRITE setEnableCriticalMsgs NOTIFY enableCriticalMsgsChanged)
 
   Q_CLASSINFO("class-alias","Threshold Filter")
   Q_CLASSINFO("directory","OpenCV/Filters")
@@ -58,14 +59,23 @@ public:
 
 public slots:
 
-  void in(const MatEvent& event);
+  QVARIANT_PAYLOAD(MatEvent) void in(const QVariant& srcEvent);
 
   void threshold(double threshold);
   void maximum(double maximum);
 
 signals:
 
-  void out(const MatEvent& mat);
+  QVARIANT_PAYLOAD(MatEvent) void out(const QVariant& dstEvent);
+
+  void filterTypeChanged(const FilterType&);
+  void thresholdChanged(double);
+  void maximumChanged(double);
+
+  void enableDebugMsgsChanged(bool);
+  void enableInfoMsgsChanged(bool);
+  void enableWarningMsgsChanged(bool);
+  void enableCriticalMsgsChanged(bool);
 
 protected:
 

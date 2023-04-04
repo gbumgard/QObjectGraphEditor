@@ -2,10 +2,11 @@
 #define COPYMASKOPERATION_H
 
 #include <QObject>
+#include "AbstractOpenCvObject.h"
 
 #include <opencv2/core.hpp>
 
-class MaskAndCopyOperation : public QObject
+class MaskAndCopyOperation : public AbstractOpenCvObject
 {
 
   Q_OBJECT
@@ -21,13 +22,13 @@ public:
 
 public slots:
 
-  void in(const cv::Mat& mat);
-  void mask(const cv::Mat& mat);
+  QVARIANT_PAYLOAD(MatEvent) void in(const QVariant& srcEvent);
+  QVARIANT_PAYLOAD(MatEvent) void mask(const QVariant& srcEvent);
 
 signals:
 
-  void out(const cv::Mat& mat);
-  void maskUsed(const cv::Mat& mat);
+  QVARIANT_PAYLOAD(MatEvent) void out(const QVariant& srcEvent);
+  QVARIANT_PAYLOAD(MatEvent) void maskUsed(const QVariant& srcEvent);
 
 protected:
 

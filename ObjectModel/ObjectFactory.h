@@ -12,19 +12,11 @@
 #include <QDebug>
 #include <QVariant>
 
-#include "Event.h"
 #include "QVariantEvent.h"
 
 #include <iostream>
-#include "ObjectModel.h"
 
 #define ObjectFactoryPlugin_iid "com.larkwoodlabs.qt.plugins.ObjectFactory"
-
-#ifndef Q_MOC_RUN
-#define QVARIANT_PAYLOAD(...)
-#else
-#define QVARIANT_PAYLOAD(a) a
-#endif
 
 Q_DECLARE_METATYPE(bool*)
 

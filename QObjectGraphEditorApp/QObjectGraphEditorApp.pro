@@ -6,7 +6,7 @@
 
 QT       += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets openglwidgets
 
 TARGET = QObjectGraphEditorApp
 TEMPLATE = app
@@ -40,12 +40,12 @@ FORMS += \
 INCLUDEPATH += \
   $$PWD/../ObjectViewModel \
   $$PWD/../ObjectModel \
-  $$PWD/../../QtPropertyBrowser/src
+  $$PWD/../../QtPropertyBrowser
 
 DEPENDPATH += \
   $$PWD/../ObjectViewModel \
   $$PWD/../ObjectModel \
-  $$PWD/../../QtPropertyBrowser/src
+  $$PWD/../../QtPropertyBrowser
 
 #QMAKE_POST_LINK += mkdir -f $$OUT_PWD/db
 
@@ -63,18 +63,18 @@ else:unix: LIBS += -L$$OUT_PWD/../ObjectViewModel/ -lObjectViewModel
 INCLUDEPATH += $$PWD/../ObjectGraphView
 DEPENDPATH += $$PWD/../ObjectGraphView
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../build-QtPropertyBrowser-Desktop_Qt_5_11_1_GCC_64bit-Default/src/release/ -lQtPropertyBrowser
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../build-QtPropertyBrowser-Desktop_Qt_5_11_1_GCC_64bit-Default/src/debug/ -lQtPropertyBrowser
-else:unix: LIBS += -L$$PWD/../../build-QtPropertyBrowser-Desktop_Qt_5_11_1_GCC_64bit-Default/src/ -lQtPropertyBrowser
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Release -lQtPropertyBrowser
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Debug -lQtPropertyBrowser
+else:unix: LIBS += -L$$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Release -lQtPropertyBrowser
 
-INCLUDEPATH += $$PWD/../../build-QtPropertyBrowser-Desktop_Qt_5_11_1_GCC_64bit-Default/src
-DEPENDPATH += $$PWD/../../build-QtPropertyBrowser-Desktop_Qt_5_11_1_GCC_64bit-Default/src
+INCLUDEPATH += $$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Release
+DEPENDPATH += $$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Release
 
-win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../build-QtPropertyBrowser-Desktop_Qt_5_11_1_GCC_64bit-Default/src/release/libQtPropertyBrowser.a
-else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../build-QtPropertyBrowser-Desktop_Qt_5_11_1_GCC_64bit-Default/src/debug/libQtPropertyBrowser.a
-else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../build-QtPropertyBrowser-Desktop_Qt_5_11_1_GCC_64bit-Default/src/release/QtPropertyBrowser.lib
-else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../build-QtPropertyBrowser-Desktop_Qt_5_11_1_GCC_64bit-Default/src/debug/QtPropertyBrowser.lib
-else:unix: PRE_TARGETDEPS += $$PWD/../../build-QtPropertyBrowser-Desktop_Qt_5_11_1_GCC_64bit-Default/src/libQtPropertyBrowser.a
+win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Release/libQtPropertyBrowser.so
+else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Debug/libQtPropertyBrowser.so
+else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Release/QtPropertyBrowser.lib
+else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Debug/QtPropertyBrowser.lib
+else:unix: PRE_TARGETDEPS += $$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Release/libQtPropertyBrowser.so
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../ObjectModel/release/ -lObjectModel
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../ObjectModel/debug/ -lObjectModel

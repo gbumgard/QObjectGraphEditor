@@ -1,13 +1,13 @@
 #ifndef APPLYTERRAINCOLORMAP_H
 #define APPLYTERRAINCOLORMAP_H
 
-#include "OpenCvFactoryPlugin.h"
-
 #include <QObject>
-
+#include <QVariant>
+#include "AbstractOpenCvObject.h"
+#include "MatEvent.h"
 #include <opencv2/core.hpp>
 
-class ApplyTerrainColorMap : public QObject
+class ApplyTerrainColorMap : public AbstractOpenCvObject
 {
 
   Q_OBJECT
@@ -15,7 +15,8 @@ class ApplyTerrainColorMap : public QObject
   Q_CLASSINFO("class-alias","Apply Terrain Color Map")
   Q_CLASSINFO("directory","OpenCV/Image Processing")
 
-  Q_PROPERTY(bool flip READ flip WRITE flip)
+  Q_PROPERTY(bool flip READ flip WRITE flip NOTIFY flipChanged)
+
 public:
 
   Q_INVOKABLE ApplyTerrainColorMap(QObject* parent = nullptr);
@@ -26,18 +27,20 @@ public:
 
 signals:
 
-  void dst(const MatEvent& mat);
+  QVARIANT_PAYLOAD(MatEvent) void dst(const QVariant& dstEvent);
+
+  void flipChanged(bool);
 
 public slots:
 
-  void src(const MatEvent& mat);
+  QVARIANT_PAYLOAD(MatEvent) void src(const QVariant& srcEvent);
 
   void flip(bool enable);
 
 private:
 
   bool _flip;
-  cv::Mat _input;
+  MatEvent _srcEvent;
 
 };
 

@@ -1,5 +1,5 @@
 #include "InRangeFilter.h"
-#include "OpenCvFactoryPlugin.h"
+#include "ObjectModel.h"
 
 #include <opencv2/imgproc.hpp>
 
@@ -14,16 +14,20 @@ InRangeFilter::InRangeFilter(QObject* parent)
 {
 }
 
-void InRangeFilter::in(const MatEvent& event) {
-
-  if (!event.payload().empty()) {
-    cv::Mat aboveLowerMask = event.payload() >= _minimum;
-    cv::Mat belowUpperMask = event.payload() <= _maximum;
+void InRangeFilter::src(const QVariant &variant) {
+  if (variant.userType() == MatEvent::userType()) {
+    ObjectModel::setObjectStatus(this,ObjectModel::STATUS_OK,"OK");
+    MatEvent matEvent = qvariant_cast<MatEvent>(variant);
+    cv::Mat aboveLowerMask = matEvent.mat() >= _minimum;
+    cv::Mat belowUpperMask = matEvent.mat() <= _maximum;
     cv::Mat inRangeMask = aboveLowerMask & belowUpperMask;
-    cv::Mat dst;
-    event.payload().copyTo(dst,inRangeMask);
-    dst.setTo(cv::Scalar(_low),~aboveLowerMask);
-    dst.setTo(cv::Scalar(_high),~belowUpperMask);
-    emit out(MatEvent(dst,event.timestamp()));
+    cv::Mat output;
+    matEvent.mat().copyTo(output,inRangeMask);
+    //output.setTo(cv::Scalar(_low),~aboveLowerMask);
+    //output.setTo(cv::Scalar(_high),~belowUpperMask);
+    emit dst(QVariant::fromValue(MatEvent(output,matEvent.timestamp())));
+  }
+  else {
+    ObjectModel::setObjectStatus(this,ObjectModel::STATUS_INVALID_SLOT_ARGUMENT_FORMAT,"Unsupported SRC");
   }
 }

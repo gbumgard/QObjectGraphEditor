@@ -1,8 +1,6 @@
 #include "MatViewer.h"
-#include "OpenCvFactoryPlugin.h"
-
+#include "ObjectModel.h"
 #include <QPainter>
-
 #include <QDebug>
 
 REGISTER_CLASS(MatViewer)
@@ -110,7 +108,7 @@ void MatViewer::src(const QVariant &variant) {
 
     update();
   }
-  else if (variant.type() == QVariant::Image) {
+  else if (variant.typeId() == QMetaType::QImage) {
 
     QImage _image = qvariant_cast<QImage>(variant);
 

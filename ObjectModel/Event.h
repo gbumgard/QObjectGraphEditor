@@ -5,6 +5,12 @@
 #include <stdint.h>
 #include <chrono>
 
+#ifndef Q_MOC_RUN
+#define QVARIANT_PAYLOAD(...)
+#else
+#define QVARIANT_PAYLOAD(a) a
+#endif
+
 /**
  * @brief The Event class
  */
@@ -23,6 +29,8 @@ public:
     : _timestamp(-1)
   {
   }
+
+  ~Event() {}
 
   /**
    * @brief release

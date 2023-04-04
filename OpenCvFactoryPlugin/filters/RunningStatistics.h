@@ -1,13 +1,13 @@
 #ifndef RunningStatistics_H
 #define RunningStatistics_H
 
-#include "OpenCvFactoryPlugin.h"
-
 #include <QObject>
-
+#include <QVariant>
+#include "MatEvent.h"
+#include "AbstractOpenCvObject.h"
 #include <opencv2/core.hpp>
 
-class RunningStatistics : public QObject
+class RunningStatistics : public AbstractOpenCvObject
 {
 
   Q_OBJECT
@@ -15,9 +15,9 @@ class RunningStatistics : public QObject
   Q_CLASSINFO("class-alias","Running Statistics")
   Q_CLASSINFO("directory","OpenCV/Filters")
 
-  Q_PROPERTY(qreal min READ min WRITE min)
-  Q_PROPERTY(qreal max READ max WRITE max)
-  Q_PROPERTY(bool reset READ reset WRITE reset)
+  Q_PROPERTY(qreal min READ min WRITE min NOTIFY minChanged)
+  Q_PROPERTY(qreal max READ max WRITE max NOTIFY maxChanged)
+  Q_PROPERTY(bool reset READ reset WRITE reset NOTIFY resetChanged)
 
 public:
 
@@ -33,7 +33,7 @@ public:
 
 public slots:
 
-  void in(const MatEvent& input);
+  QVARIANT_PAYLOAD(MatEvent) void in(const QVariant& srcEvent);
 
   void min(qreal min) { _min  = min; clear(); }
 
@@ -43,13 +43,17 @@ public slots:
 
 signals:
 
-  void mean(const MatEvent& output);
+  QVARIANT_PAYLOAD(MatEvent) void mean(const QVariant& dstEvent);
 
-  void var(const MatEvent& output);
+  QVARIANT_PAYLOAD(MatEvent) void var(const QVariant& dstEvent);
 
-  void std(const MatEvent& output);
+  QVARIANT_PAYLOAD(MatEvent) void std(const QVariant& dstEvent);
 
-  void update(const MatEvent& output);
+  QVARIANT_PAYLOAD(MatEvent) void update(const QVariant& dstEvent);
+
+  void minChanged(qreal);
+  void maxChanged(qreal);
+  void resetChanged(bool);
 
 protected:
 

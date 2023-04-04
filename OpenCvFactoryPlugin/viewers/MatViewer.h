@@ -1,11 +1,10 @@
 #ifndef MatEventViewer_H
 #define MatEventViewer_H
 
-#include "OpenCvFactoryPlugin.h"
-
 #include <QObject>
 #include <QWidget>
 #include <QImage>
+#include "AbstractOpenCvObject.h"
 #include <opencv2/core.hpp>
 
 class MatViewer : public QWidget
@@ -17,8 +16,8 @@ class MatViewer : public QWidget
   Q_CLASSINFO("slot-order","src(QVariant)")
   Q_CLASSINFO("signal-order","NONE")
 
-  Q_PROPERTY(QString caption READ caption WRITE caption STORED true FINAL)
-  Q_PROPERTY(bool SwapRedBlue READ swapRedBlue WRITE swapRedBlue STORED true FINAL)
+  Q_PROPERTY(QString caption READ caption WRITE caption STORED true FINAL NOTIFY captionChanged)
+  Q_PROPERTY(bool swapRedBlue READ swapRedBlue WRITE setSwapRedBlue STORED true FINAL NOTIFY swapRedBlueChanged )
 
 public:
 
@@ -38,10 +37,6 @@ public:
     return _swapRedBlue;
   }
 
-  void swapRedBlue(bool swapRedBlue) {
-    _swapRedBlue = swapRedBlue;
-  }
-
   QSize sizeHint() const {
     return _image.size();
   }
@@ -53,8 +48,15 @@ public slots:
   QVARIANT_PAYLOAD(QImage)
   void src(const QVariant& variant);
 
+  void setSwapRedBlue(bool swapRedBlue) {
+    _swapRedBlue = swapRedBlue;
+  }
+
+
 signals:
 
+  void captionChanged(const QString&);
+  void swapRedBlueChanged(bool);
 
 protected:
 

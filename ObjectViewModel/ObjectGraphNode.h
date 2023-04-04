@@ -33,11 +33,11 @@ class ObjectGraphNode : public QGraphicsWidget
 
   Q_OBJECT
 
-  Q_PROPERTY(QString caption READ caption WRITE setCaption)
-  Q_PROPERTY(QString statusCode READ statusCode)
-  Q_PROPERTY(QString statusMessage READ statusMessage)
-  Q_PROPERTY(QPen pen READ pen WRITE setPen)
-  Q_PROPERTY(QBrush brush READ brush WRITE setBrush)
+  Q_PROPERTY(QString caption READ caption WRITE setCaption NOTIFY captionChanged)
+  Q_PROPERTY(int statusCode READ statusCode CONSTANT)
+  Q_PROPERTY(QString statusMessage READ statusMessage CONSTANT)
+  Q_PROPERTY(QPen pen READ pen WRITE setPen NOTIFY penChanged)
+  Q_PROPERTY(QBrush brush READ brush WRITE setBrush NOTIFY brushChanged)
 
 public:
 
@@ -80,6 +80,9 @@ public:
 signals:
 
   void onMoved(const QPointF offset);
+  void captionChanged(const QString& caption);
+  void penChanged(const QPen& pen);
+  void brushChanged(const QBrush& brush);
 
 public slots:
 

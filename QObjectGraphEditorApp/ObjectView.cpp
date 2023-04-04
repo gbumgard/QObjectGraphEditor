@@ -9,6 +9,7 @@
 #include <QGraphicsItem>
 #include <QGraphicsSceneDragDropEvent>
 #include <QOpenGLWidget>
+#include <QFile>
 
 #include <QDebug>
 #include <math.h>

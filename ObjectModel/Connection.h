@@ -3,6 +3,7 @@
 
 #include "objectmodel_global.h"
 #include <QUuid>
+#include <QHash>
 
 /**
  * @brief The Connection class
@@ -42,10 +43,10 @@ public:
 
 };
 
-inline uint qHash(const Connection& connection, uint seed) {
+inline uint qHash(const Connection& connection, int seed) {
   return seed ^
          qHash(connection.senderUuid(),seed) ^
-         qHash(connection.signalSignature(),seed) ^
+         qHash(connection.signalSignature()) ^
          qHash(connection.receiverUuid(),seed) ^
          qHash(connection.slotSignature(),seed);
 }

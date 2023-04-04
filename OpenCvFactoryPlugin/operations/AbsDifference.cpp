@@ -1,7 +1,4 @@
 #include "operations/AbsDifference.h"
-
-#include "OpenCvFactoryPlugin.h"
-
 #include <opencv2/imgproc.hpp>
 
 REGISTER_CLASS(AbsDifference)
@@ -21,7 +18,7 @@ void AbsDifference::src1(const MatEvent &src1Event) {
     _src2Event.release();
     return;
   }
-  update();
+  updateObject();
 }
 
 void AbsDifference::src2(const MatEvent &src2Event) {
@@ -32,7 +29,7 @@ void AbsDifference::src2(const MatEvent &src2Event) {
     _src1Event.release();
     return;
   }
-  update();
+  updateObject();
 }
 
 void AbsDifference::doUpdate() {

@@ -1,5 +1,5 @@
 #include "ApplyTerrainColorMap.h"
-#include "OpenCvFactoryPlugin.h"
+#include "ObjectModel.h"
 
 REGISTER_CLASS(ApplyTerrainColorMap)
 
@@ -292,7 +292,7 @@ static const cv::Mat& getLut(bool flipped) {
 }
 
 ApplyTerrainColorMap::ApplyTerrainColorMap(QObject* parent)
-  : QObject(parent)
+  : AbstractOpenCvObject(parent)
   , _flip(false)
 {
 }
@@ -301,17 +301,25 @@ void ApplyTerrainColorMap::flip(bool enable) {
   _flip = enable;
 }
 
-void ApplyTerrainColorMap::src(const MatEvent &srcEvent) {
-  cv::Mat mat8U;
-  if (srcEvent.mat().depth() != CV_8U) {
-    srcEvent.mat().convertTo(mat8U,CV_8U);
+void ApplyTerrainColorMap::src(const QVariant &variant) {
+  if (variant.userType() == MatEvent::userType()) {
+    ObjectModel::setObjectStatus(this,ObjectModel::STATUS_OK,"OK");
+    MatEvent srcEvent = qvariant_cast<MatEvent>(variant);
+    cv::Mat mat8U;
+    if (srcEvent.mat().depth() != CV_8U) {
+      srcEvent.mat().convertTo(mat8U,CV_8U);
+    }
+    else {
+      mat8U = srcEvent.mat();
+    }
+    cv::Mat mat8UC3;
+    cv::cvtColor(mat8U,mat8UC3,cv::COLOR_GRAY2BGR);
+    cv::Mat output;
+    cv::LUT(mat8UC3,getLut(_flip),output);
+    emit dst(QVariant::fromValue(MatEvent(output,srcEvent.timestamp())));
   }
   else {
-    mat8U = srcEvent.mat();
+    ObjectModel::setObjectStatus(this,ObjectModel::STATUS_INVALID_SLOT_ARGUMENT_FORMAT,"Unsupported SRC");
   }
-  cv::Mat mat8UC3;
-  cv::cvtColor(mat8U,mat8UC3,cv::COLOR_GRAY2BGR);
-  cv::Mat dstMat;
-  cv::LUT(mat8UC3,getLut(_flip),dstMat);
-  emit dst(MatEvent(dstMat,srcEvent.timestamp()));
 }
+

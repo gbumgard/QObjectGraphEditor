@@ -1,5 +1,5 @@
 #include "HeightMapViewer.h"
-#include "OpenCvFactoryPlugin.h"
+#include "ObjectModel.h"
 
 #include <QDebug>
 #include <QGridLayout>
@@ -62,7 +62,7 @@ inline QImage mat_to_qimage_cpy(cv::Mat const &mat, bool swap)
 }
 
 HeightMapViewer::HeightMapViewer(QObject *parent)
-  : QObject(parent)
+  : AbstractOpenCvObject(parent)
   , _heightMap(":/maps/mountain")
   , _imageSize(_heightMap.width(),_heightMap.height())
   , _texture()
@@ -110,9 +110,11 @@ HeightMapViewer::HeightMapViewer(QObject *parent)
   _heightMapSeries->setDrawMode(QSurface3DSeries::DrawSurface);
   _heightMapSeries->setFlatShadingEnabled(false);
 
-  _graph->activeTheme()->setType(Q3DTheme::Theme(2));
+  _graph->activeTheme()->setType(Q3DTheme::ThemeEbony);//Q3DTheme::Theme(2));
   _graph->activeTheme()->setAmbientLightStrength(1.0);
-  _graph->activeTheme()->setBackgroundEnabled(false);
+  _graph->activeTheme()->setBackgroundEnabled(true);
+  _graph->activeTheme()->setBackgroundColor(QColor(0,0,0));
+
   _graph->setSelectionMode(QAbstract3DGraph::SelectionNone);
   _graph->setShadowQuality(QAbstract3DGraph::ShadowQualityNone);
 
@@ -127,7 +129,6 @@ HeightMapViewer::HeightMapViewer(QObject *parent)
 
   _graph->seriesList().at(0)->setBaseGradient(gr);
   _graph->seriesList().at(0)->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
-
   _graph->show();
 
 }
@@ -137,28 +138,44 @@ HeightMapViewer::~HeightMapViewer() {
   delete _graph;
 }
 
-void HeightMapViewer::map(const MatEvent& event) {
+void HeightMapViewer::map(const QVariant &variant) {
+  if (variant.userType() == MatEvent::userType()) {
+      ObjectModel::setObjectStatus(this,ObjectModel::STATUS_OK,"OK");
+      MatEvent matEvent = qvariant_cast<MatEvent>(variant);
+      cv::Mat heightMat;
+      matEvent.mat().convertTo(heightMat,CV_8UC1);
+      if (_flipZAxis) {
+        heightMat = 255 - heightMat;
+      }
 
-  cv::Mat heightMat;
-  event.mat().convertTo(heightMat,CV_8UC1);
+      _heightMap = mat_to_qimage_cpy(heightMat,true);
 
-  _heightMap = mat_to_qimage_cpy(heightMat,true);
-
-  if (event.mat().size() != _imageSize) {
-    _imageSize = event.mat().size();
-    _graph->axisX()->setRange(0, _imageSize.width);
-    _graph->axisZ()->setRange(0, _imageSize.height);
-    _heightMapProxy->setValueRanges(0, _imageSize.width, 0, _imageSize.height);
-  }
-  _heightMapProxy->setHeightMap(_heightMap);
+      if (matEvent.mat().size() != _imageSize) {
+        _imageSize = matEvent.mat().size();
+        _graph->axisX()->setRange(0, _imageSize.width);
+        _graph->axisZ()->setRange(0, _imageSize.height);
+        _heightMapProxy->setValueRanges(0, _imageSize.width, 0, _imageSize.height);
+        _heightMapProxy->setAutoScaleY(false);
+        _heightMapProxy->setMinYValue(0.0);
+        _heightMapProxy->setMaxYValue(255.0);
+      }
+      _heightMapProxy->setHeightMap(_heightMap);
+    }
+    else {
+      ObjectModel::setObjectStatus(this,ObjectModel::STATUS_INVALID_SLOT_ARGUMENT_FORMAT,"Unsupported SRC");
+    }
 }
 
-void HeightMapViewer::texture(const MatEvent& mat) {
-
-  if (!mat.mat().empty()) {
-    _texture = mat_to_qimage_cpy(mat.mat(),true);
-    if (_enableTexture) {
-      _heightMapSeries->setTexture(_texture);
+void HeightMapViewer::texture(const QVariant &variant) {
+    if (variant.userType() == MatEvent::userType()) {
+      ObjectModel::setObjectStatus(this,ObjectModel::STATUS_OK,"OK");
+      MatEvent matEvent = qvariant_cast<MatEvent>(variant);
+      if (_enableTexture) {
+        _texture = mat_to_qimage_cpy(matEvent.mat(),true);
+        _heightMapSeries->setTexture(_texture);
+      }
     }
-  }
+    else {
+      ObjectModel::setObjectStatus(this,ObjectModel::STATUS_INVALID_SLOT_ARGUMENT_FORMAT,"Unsupported SRC");
+    }
 }

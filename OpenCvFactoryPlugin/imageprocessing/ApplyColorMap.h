@@ -1,10 +1,14 @@
 #ifndef APPLYCOLORMAP_H
 #define APPLYCOLORMAP_H
 
+
 #include <QObject>
+#include <QVariant>
+#include "AbstractOpenCvObject.h"
+#include "MatEvent.h"
 #include <opencv2/imgproc.hpp>
 
-class ApplyColorMap : public QObject
+class ApplyColorMap : public AbstractOpenCvObject
 {
 
   Q_OBJECT
@@ -24,7 +28,16 @@ public:
     COLORMAP_HSV = cv::COLORMAP_HSV,
     COLORMAP_PINK = cv::COLORMAP_PINK,
     COLORMAP_HOT = cv::COLORMAP_HOT,
-    COLORMAP_PARULA = cv::COLORMAP_PARULA
+    COLORMAP_PARULA = cv::COLORMAP_PARULA,
+    COLORMAP_MAGMA = cv::COLORMAP_MAGMA,
+    COLORMAP_INFERNO = cv::COLORMAP_INFERNO,
+    COLORMAP_PLASMA = cv::COLORMAP_PLASMA,
+    COLORMAP_VIRIDIS = cv::COLORMAP_VIRIDIS,
+    COLORMAP_CIVIDIS = cv::COLORMAP_CIVIDIS,
+    COLORMAP_TWILIGHT = cv::COLORMAP_TWILIGHT,
+    COLORMAP_TWILIGHT_SHIFTED = cv::COLORMAP_TWILIGHT_SHIFTED,
+    COLORMAP_TURBO = cv::COLORMAP_TURBO,
+    COLORMAP_DEEPGREEN = cv::COLORMAP_DEEPGREEN
   };
 
   Q_ENUM(ColorMap)
@@ -34,7 +47,7 @@ private:
   Q_CLASSINFO("class-alias","Apply Color Map")
   Q_CLASSINFO("directory","OpenCV/Image Processing")
 
-  Q_PROPERTY(ColorMap colorMap READ colorMap WRITE colorMap)
+  Q_PROPERTY(ColorMap colorMap READ colorMap WRITE colorMap NOTIFY colorMapChanged)
 
 public:
 
@@ -43,13 +56,15 @@ public:
   ColorMap colorMap() const { return _colorMap; }
   void colorMap(ColorMap colorMap);
 
-signals:
-
-  void out(const cv::Mat& mat);
-
 public slots:
 
-  void in(const cv::Mat& mat);
+  QVARIANT_PAYLOAD(MatEvent) void src(const QVariant& srcEvent);
+
+signals:
+
+  QVARIANT_PAYLOAD(MatEvent) void dst(const QVariant& dstEvent);
+
+  void colorMapChanged(const ColorMap&);
 
 protected:
 
@@ -57,7 +72,7 @@ protected:
 
 private:
 
-  cv::Mat _input;
+  MatEvent _srcEvent;
   ColorMap _colorMap;
 };
 

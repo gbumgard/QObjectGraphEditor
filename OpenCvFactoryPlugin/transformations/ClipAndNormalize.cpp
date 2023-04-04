@@ -1,5 +1,5 @@
 #include "ClipAndNormalize.h"
-#include "OpenCvFactoryPlugin.h"
+#include "ObjectModel.h"
 
 REGISTER_CLASS(ClipAndNormalize)
 
@@ -40,10 +40,15 @@ void ClipAndNormalize::src(const QVariant &variant) {
     MatEvent matEvent = qvariant_cast<MatEvent>(variant);
     double inputRange = _maximum - _minimum;
     double scale = _range / inputRange;
-    cv::Mat output = matEvent.mat().clone();
-    output -= _minimum;
-    output *= scale;
-    output += _offset;
+    cv::Mat aboveLowerMask = matEvent.mat() >= _minimum;
+    cv::Mat belowUpperMask = matEvent.mat() <= _maximum;
+    cv::Mat inRangeMask = aboveLowerMask & belowUpperMask;
+    cv::Mat normalized = matEvent.mat().clone();
+    normalized -= _minimum;
+    normalized *= scale;
+    normalized += _offset;
+    cv::Mat output;
+    normalized.copyTo(output,inRangeMask);
     emit dst(QVariant::fromValue(MatEvent(output,matEvent.timestamp())));
   }
   else {

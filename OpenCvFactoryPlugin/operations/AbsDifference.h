@@ -1,9 +1,10 @@
 #ifndef ABSDIFFERENCE_H
 #define ABSDIFFERENCE_H
 
-#include "AbstractOpenCvObject.h"
-
 #include <QObject>
+#include <QVariant>
+#include "AbstractOpenCvObject.h"
+#include "MatEvent.h"
 
 #include <opencv2/core.hpp>
 

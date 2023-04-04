@@ -111,7 +111,7 @@ bool ObjectGraph::serialize(QDataStream &out,
             property.isStored()) {
           qDebug() << "property"
                    << "name" << property.name()
-                   << "type" << property.type()
+                   << "type" << property.typeId()
                    << "typeName" << property.typeName()
                    << "value" << property.read(node);
           graphProperties[nodeUuid][property.name()] = property.read(node);
@@ -554,15 +554,14 @@ void  ObjectGraph::contextMenuEvent(QGraphicsSceneContextMenuEvent* e) {
   qDebug() << Q_FUNC_INFO << e;
 
   QMenu menu;
-  QAction* actionUndo = menu.addAction(QIcon::fromTheme("edit-undo"),"Undo",this,&ObjectGraph::onUndoAction,QKeySequence::Undo);
-  QAction* actionRedo = menu.addAction(QIcon::fromTheme("edit-redo"),"Redo",this,&ObjectGraph::onRedoAction,QKeySequence::Redo);
-  QAction* actionCut = menu.addAction(QIcon::fromTheme("edit-cut"),"Cut",this,&ObjectGraph::onCutAction,QKeySequence::Cut);
-  QAction* actionCopy = menu.addAction(QIcon::fromTheme("edit-copy"),"Copy",this,&ObjectGraph::onCopyAction,QKeySequence::Copy);
-  QAction* actionPaste = menu.addAction(QIcon::fromTheme("edit-paste"),"Paste",[this,e]() {onPasteAction(e->scenePos());},QKeySequence::Paste);
-  QAction* actionDelete = menu.addAction(QIcon::fromTheme("edit-delete"),"Delete",this,&ObjectGraph::onDeleteAction,QKeySequence::Delete);
-  menu.addAction(QIcon::fromTheme("edit-select-all"),"Select All",this,&ObjectGraph::onSelectAllAction,QKeySequence::SelectAll);
-
-  menu.addAction(QIcon::fromTheme("help-contents"),"Context Help",this,&ObjectGraph::onContextHelpAction,QKeySequence(Qt::Key_F1));
+  QAction* actionUndo = menu.addAction(QIcon::fromTheme("edit-undo"),"Undo",QKeySequence::Undo,this,&ObjectGraph::onUndoAction);
+  QAction* actionRedo = menu.addAction(QIcon::fromTheme("edit-redo"),"Redo",QKeySequence::Redo,this,&ObjectGraph::onRedoAction);
+  QAction* actionCut = menu.addAction(QIcon::fromTheme("edit-cut"),"Cut",QKeySequence::Cut,this,&ObjectGraph::onCutAction);
+  QAction* actionCopy = menu.addAction(QIcon::fromTheme("edit-copy"),"Copy",QKeySequence::Copy,this,&ObjectGraph::onCopyAction);
+  QAction* actionPaste = menu.addAction(QIcon::fromTheme("edit-paste"),"Paste",QKeySequence::Paste,[this,e]() {onPasteAction(e->scenePos());});
+  QAction* actionDelete = menu.addAction(QIcon::fromTheme("edit-delete"),"Delete",QKeySequence::Delete,this,&ObjectGraph::onDeleteAction);
+  menu.addAction(QIcon::fromTheme("edit-select-all"),"Select All",QKeySequence::SelectAll,this,&ObjectGraph::onSelectAllAction);
+  menu.addAction(QIcon::fromTheme("help-contents"),"Context Help",QKeySequence(Qt::Key_F1),this,&ObjectGraph::onContextHelpAction);
 
   actionUndo->setDisabled(!_commandStack->canUndo());
   actionRedo->setDisabled(!_commandStack->canRedo());

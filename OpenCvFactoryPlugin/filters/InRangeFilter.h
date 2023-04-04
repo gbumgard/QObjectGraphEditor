@@ -1,9 +1,9 @@
 #ifndef InRangeFilter_H
 #define InRangeFilter_H
 
-#include "OpenCvFactoryPlugin.h"
-
 #include <QObject>
+#include <QVariant>
+#include "MatEvent.h"
 #include "AbstractOpenCvObject.h"
 #include <opencv2/core.hpp>
 
@@ -15,10 +15,10 @@ class InRangeFilter : public AbstractOpenCvObject
   Q_CLASSINFO("class-alias","In Range Filter")
   Q_CLASSINFO("directory","OpenCV/Filters")
 
-  Q_PROPERTY(double minimum READ minimum WRITE minimum)
-  Q_PROPERTY(double maximum READ maximum WRITE maximum)
-  Q_PROPERTY(double low READ low WRITE low)
-  Q_PROPERTY(double high READ high WRITE high)
+  Q_PROPERTY(double minimum READ minimum WRITE minimum NOTIFY minimumChanged)
+  Q_PROPERTY(double maximum READ maximum WRITE maximum NOTIFY maximumChanged)
+  Q_PROPERTY(double low READ low WRITE low NOTIFY lowChanged)
+  Q_PROPERTY(double high READ high WRITE high NOTIFY highChanged)
 
 public:
 
@@ -34,7 +34,7 @@ public:
 
 public slots:
 
-  void in(const MatEvent& event);
+  QVARIANT_PAYLOAD(MatEvent) void src(const QVariant& srcEvent);
 
   void minimum(double minimum) {
     _minimum = minimum;
@@ -54,7 +54,12 @@ public slots:
 
 signals:
 
-  void out(const MatEvent& event);
+  QVARIANT_PAYLOAD(MatEvent) void dst(const QVariant& dstEvent);
+
+  void minimumChanged(double);
+  void maximumChanged(double);
+  void lowChanged(double);
+  void highChanged(double);
 
 private:
 

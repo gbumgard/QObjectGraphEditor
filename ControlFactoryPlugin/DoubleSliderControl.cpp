@@ -7,33 +7,35 @@ DoubleSliderControl::DoubleSliderControl(QWidget *parent)
   : QSlider(parent)
 {
   setProperty("methodOffset",QAbstractSlider::staticMetaObject.methodOffset());
-  _minimumValue = QSlider::minimum();
-  _maximumValue = QSlider::maximum();
+  _scaleMin = QSlider::minimum();
+  _scaleMax = QSlider::maximum();
   connect(this,&QSlider::valueChanged,this,&DoubleSliderControl::onValueChanged);
 }
 
-double DoubleSliderControl::value() const {
+double DoubleSliderControl::scaleValue() const {
   double ratio = double(QSlider::value() - QSlider::minimum()) / double(QSlider::maximum() - QSlider::minimum());
-  return ratio * (_maximumValue - _minimumValue) + _minimumValue;
+  return ratio * (_scaleMax - _scaleMin) + _scaleMin;
 }
 
-void DoubleSliderControl::setMinimum(double dvalue) {
-  if (dvalue != _minimumValue) {
-    _minimumValue = dvalue;
-    updateDoubleValue();
+void DoubleSliderControl::setScaleMin(double dvalue) {
+  if (dvalue != _scaleMin && dvalue != _scaleMax) {
+      _scaleMin = dvalue;
+    //updateDoubleValue();
+    emit scaleMinChanged(dvalue);
   }
 }
 
-void DoubleSliderControl::setMaximum(double dvalue) {
-  if (dvalue != _maximumValue) {
-    _maximumValue = dvalue;
-    updateDoubleValue();
+void DoubleSliderControl::setScaleMax(double dvalue) {
+  if (dvalue != _scaleMax && dvalue != _scaleMin) {
+    _scaleMax = dvalue;
+    //updateDoubleValue();
+    emit scaleMaxChanged(dvalue);
   }
 }
 
 void DoubleSliderControl::in(double dvalue) {
-  if (dvalue >= _minimumValue && dvalue <= _maximumValue) {
-    double ratio = (dvalue - _minimumValue) / (_maximumValue - _minimumValue);
+  if (dvalue >= _scaleMin && dvalue <= _scaleMax && _scaleMin != _scaleMax) {
+    double ratio = (dvalue - _scaleMin) / (_scaleMax - _scaleMin);
     int sliderValue = ratio * (QSlider::maximum() - QSlider::minimum()) + QSlider::minimum();
     if (sliderValue != QSlider::value()) {
       QSlider::setValue(sliderValue);
@@ -47,5 +49,5 @@ void DoubleSliderControl::onValueChanged(int) {
 }
 
 void DoubleSliderControl::updateDoubleValue() {
-  emit out(value());
+  emit out(scaleValue());
 }

@@ -1,12 +1,12 @@
 #ifndef MORPHOLOGYTRANSFORMATION_H
 #define MORPHOLOGYTRANSFORMATION_H
 
-#include "OpenCvFactoryPlugin.h"
+#include "AbstractOpenCvObject.h"
 
 #include <QObject>
 #include <opencv2/imgproc.hpp>
 
-class MorphologyTransformation : public QObject
+class MorphologyTransformation : public AbstractOpenCvObject
 {
 
   Q_OBJECT
@@ -17,7 +17,7 @@ class MorphologyTransformation : public QObject
 public:
 
   enum KernelSize {
-    KERNEL_3X3 = 3,
+    KERNEL_3x3 = 3,
     KERNEL_5x5 = 5,
     KERNEL_7x7 = 7
   };
@@ -45,10 +45,10 @@ public:
 
 private:
 
-  Q_PROPERTY(Operation operation READ operation WRITE operation)
-  Q_PROPERTY(Shape shape READ shape WRITE shape)
-  Q_PROPERTY(KernelSize kernelSize READ kernelSize WRITE kernelSize)
-  Q_PROPERTY(int iterations READ iterations WRITE iterations)
+  Q_PROPERTY(Operation operation READ operation WRITE operation NOTIFY operationChanged)
+  Q_PROPERTY(Shape shape READ shape WRITE shape NOTIFY shapeChanged)
+  Q_PROPERTY(KernelSize kernelSize READ kernelSize WRITE kernelSize NOTIFY kernelSizeChanged)
+  Q_PROPERTY(int iterations READ iterations WRITE iterations NOTIFY iterationsChanged)
 
 public:
 
@@ -71,13 +71,20 @@ public:
 
 public slots:
 
-  void in(const MatEvent& input);
+  QVARIANT_PAYLOAD(MatEvent) void in(const QVariant& srcEvent);
 
 signals:
 
-  void out(const MatEvent& output);
+  QVARIANT_PAYLOAD(MatEvent) void out(const QVariant& dstEvent);
+
+  void operationChanged(Operation);
+  void shapeChanged(Shape);
+  void kernelSizeChanged(KernelSize);
+  void iterationsChanged(int);
 
 protected:
+
+  static cv::Mat getStructuringElement(Shape shape, KernelSize kernelSize, cv::Point anchor = cv::Point(-1,-1));
 
 private:
 

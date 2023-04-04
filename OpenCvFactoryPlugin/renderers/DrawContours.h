@@ -4,14 +4,16 @@
 #include <QObject>
 #include <QMetaType>
 #include <QColor>
-#include "ThreadedObject.h"
+#include "AbstractOpenCvObject.h"
 
 #include <opencv2/core.hpp>
 #include <vector>
 
-Q_DECLARE_METATYPE(std::vector<std::vector<cv::Point>>)
+typedef std::vector<std::vector<cv::Point>> Contours;
 
-class DrawContours : public ThreadedObject
+Q_DECLARE_METATYPE(Contours);
+
+class DrawContours : public AbstractOpenCvObject
 {
   Q_OBJECT
 
@@ -39,9 +41,9 @@ public:
 
 public slots:
 
-  void contours(const std::vector<std::vector<cv::Point>>& contours);
+  void contours(const Contours& contours);
 
-  void image(const cv::Mat& mat);
+  QVARIANT_PAYLOAD(MatEvent) void image(const QVariant& dstEvent);
 
   void contourIndex(int index);
 
@@ -53,16 +55,12 @@ public slots:
 
 signals:
 
-  void out(const cv::Mat& mat);
-
-protected:
-
-  void update() override;
+  QVARIANT_PAYLOAD(MatEvent) void out(const QVariant& dstEvent);
 
 private:
 
   cv::Mat _image;
-  std::vector<std::vector<cv::Point>> _contours;
+  Contours _contours;
 
   int _contourIndex;
   QColor _color;

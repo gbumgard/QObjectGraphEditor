@@ -8,8 +8,11 @@
 #include <QMutex>
 #include <QWaitCondition>
 #include <QMetaType>
+#include <QVariant>
 
-#include "OpenCvFactoryPlugin.h"
+#include "AbstractOpenCvObject.h"
+#include "MatEvent.h"
+
 #include <opencv2/opencv.hpp>
 
 #include <libfreenect2/libfreenect2.hpp>
@@ -28,7 +31,7 @@
 #include <iostream>
 
 
-class KinectV2SensorAsync: public QObject, public libfreenect2::SyncMultiFrameListener
+class KinectV2SensorAsync: public AbstractOpenCvObject, public libfreenect2::SyncMultiFrameListener
 {
 
   Q_OBJECT
@@ -37,7 +40,7 @@ class KinectV2SensorAsync: public QObject, public libfreenect2::SyncMultiFrameLi
   Q_CLASSINFO("directory","OpenCV/Sensors")
   Q_CLASSINFO("signal-order","color(QVariant),depth(QVariant),ir(QVariant),undistorted(QVariant),registered(QVariant),pcl(QVariant)")
 
-  Q_PROPERTY(QString serial READ serial)
+  Q_PROPERTY(QString serial READ serial CONSTANT)
   Q_PROPERTY(bool filterUnmatched READ filterUnmatched WRITE filterUnmatched STORED true FINAL)
   Q_PROPERTY(bool generateHighDef READ generateHighDef WRITE generateHighDef STORED true FINAL)
   Q_PROPERTY(bool mirror READ mirror WRITE mirror STORED true FINAL)

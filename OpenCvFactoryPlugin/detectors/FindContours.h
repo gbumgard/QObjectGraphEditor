@@ -4,15 +4,18 @@
 #include <QObject>
 #include <QMetaType>
 #include <QPoint>
-#include "ThreadedObject.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
 
-Q_DECLARE_METATYPE(std::vector<std::vector<cv::Point>>)
+#include "AbstractOpenCvObject.h"
 
-class FindContours : public ThreadedObject
+typedef std::vector<std::vector<cv::Point>> Contours;
+
+Q_DECLARE_METATYPE(Contours)
+
+class FindContours : public AbstractOpenCvObject
 {
   Q_OBJECT
 
@@ -99,13 +102,13 @@ public:
 
 signals:
 
-  void contours(const std::vector<std::vector<cv::Point>>& contours);
+  void contours(const Contours& contours);
 
-  void source(const cv::Mat& mat);
+  QVARIANT_PAYLOAD(MatEvent) void src(const QVariant& dstEvent);
 
 public slots:
 
-  void in(const cv::Mat& mat);
+  QVARIANT_PAYLOAD(MatEvent) void in(const QVariant& srcEvent);
 
   void mode(Mode mode);
 
@@ -120,8 +123,6 @@ public slots:
   void stepSize(int stepSize);
 
 protected:
-
-  void update() override;
 
 private:
 

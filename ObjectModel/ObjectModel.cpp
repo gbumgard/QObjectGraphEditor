@@ -4,7 +4,6 @@
 #include <QMetaObject>
 #include <QMetaMethod>
 #include <QMetaProperty>
-#include <QTextCodec>
 
 #include <QDataStream>
 #include <QUuid>
@@ -389,7 +388,7 @@ QUuid ObjectModel::objectUuid(const QObject* const object) const {
   QUuid objectId = QUuid();
   if (object) {
     QVariant v = object->property(OBJECT_ID_PROPERTY_NAME);
-    if (v.isValid() && v.type() == QVariant::Uuid) {
+    if (v.isValid() && v.typeId() == QMetaType::QUuid) {
       QUuid id = v.toUuid();
       if (_objectIndex.contains(id))
         objectId = id;
@@ -633,7 +632,7 @@ bool ObjectModel::canConnect(const QUuid& senderUuid,
                   std::stringstream slotTagTokenizer(slotTag);
 
                   while(std::getline(slotTagTokenizer,token,' ')) {
-                    int typeId = QMetaType::type(token.c_str());
+                      int typeId = QMetaType::fromName(token).id();
                     if (typeId != QMetaType::UnknownType) {
                       slotTypeRestrictions.push_back(token);
                     }
@@ -647,7 +646,7 @@ bool ObjectModel::canConnect(const QUuid& senderUuid,
                   std::stringstream signalTagTokenizer(signalTag);
 
                   while(std::getline(signalTagTokenizer,token,' ')) {
-                    int typeId = QMetaType::type(token.c_str());
+                    int typeId = QMetaType::fromName(token).id();
                     if (typeId != QMetaType::UnknownType) {
                       signalTypeRestrictions.push_back(token);
                     }
@@ -834,7 +833,7 @@ bool ObjectModel::disconnect(const QUuid& senderUuid,
  */
 QUuid ObjectModel::getObjectIdProperty(const QObject* obj) {
   QVariant v = obj->property(ObjectModel::OBJECT_ID_PROPERTY_NAME);
-  if (v.isValid() && (v.type() == QVariant::Type::Uuid)) {
+  if (v.isValid() && (v.typeId() == QMetaType::QUuid)) {
     return v.toUuid();
   }
   return QUuid();
@@ -871,7 +870,7 @@ ObjectModel* ObjectModel::getObjectModelProperty(const QObject* obj) {
  * @param model
  */
 void ObjectModel::setObjectModelProperty(QObject* obj, const ObjectModel* model) {
-  obj->setProperty(OBJECT_MODEL_PROPERTY_NAME,model);
+  obj->setProperty(OBJECT_MODEL_PROPERTY_NAME,QVariant::fromValue(model));
 }
 
 

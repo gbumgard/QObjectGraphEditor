@@ -1,12 +1,8 @@
 #ifndef ABSTRACTOPENCVOBJECT_H
 #define ABSTRACTOPENCVOBJECT_H
 
-#include "OpenCvFactoryPlugin.h"
-#include "MatEvent.h"
-
 #include <QObject>
-
-#include "Event.h"
+#include "OpenCvFactoryPlugin.h"
 
 class AbstractOpenCvObject : public QObject
 {
@@ -27,7 +23,7 @@ protected:
 
   virtual void doUpdate() {}
 
-  void update() {
+  void updateObject() {
     // TODO: Catch exceptions
     doUpdate();
   }

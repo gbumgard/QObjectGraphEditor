@@ -2,7 +2,9 @@
 #define ADDWEIGHTEDOPERATION_H
 
 #include <QObject>
+#include <QVariant>
 #include "AbstractOpenCvObject.h"
+#include "MatEvent.h"
 #include <opencv2/core.hpp>
 
 class AddWeightedOperation : public AbstractOpenCvObject
@@ -13,9 +15,9 @@ class AddWeightedOperation : public AbstractOpenCvObject
   Q_CLASSINFO("class-alias","Add Weighted Operation")
   Q_CLASSINFO("directory","OpenCV/Operations")
 
-  Q_PROPERTY(double alphaWeight READ alphaWeight WRITE alphaWeight)
-  Q_PROPERTY(double betaWeight READ betaWeight WRITE betaWeight)
-  Q_PROPERTY(double gammaOffset READ gammaOffset WRITE gammaOffset)
+  Q_PROPERTY(double alphaWeight READ alphaWeight WRITE alphaWeight NOTIFY alphaWeightChanged)
+  Q_PROPERTY(double betaWeight READ betaWeight WRITE betaWeight NOTIFY betaWeightChanged)
+  Q_PROPERTY(double gammaOffset READ gammaOffset WRITE gammaOffset NOTIFY gammaOffsetChanged)
 
 public:
 
@@ -29,8 +31,9 @@ public:
 
 public slots:
 
-  void alpha(const cv::Mat& alpha);
-  void beta(const cv::Mat& beta);
+  QVARIANT_PAYLOAD(MatEvent) void alpha(const QVariant& srcEvent);
+
+  QVARIANT_PAYLOAD(MatEvent) void beta(const QVariant& srcEvent);
 
   void alphaWeight(double alphaWeight);
   void betaWeight(double betaWeight);
@@ -38,7 +41,11 @@ public slots:
 
 signals:
 
-  void out(const cv::Mat& mat);
+  QVARIANT_PAYLOAD(MatEvent) void dst(const QVariant& dstEvent);
+
+  void alphaWeightChanged(double);
+  void betaWeightChanged(double);
+  void gammaOffsetChanged(double);
 
 protected:
 
@@ -52,6 +59,7 @@ private:
 
   cv::Mat _alphaMat;
   cv::Mat _betaMat;
+  int64_t _timestamp;
 
 };
 
