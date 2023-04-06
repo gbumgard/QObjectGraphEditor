@@ -40,12 +40,12 @@ FORMS += \
 INCLUDEPATH += \
   $$PWD/../ObjectViewModel \
   $$PWD/../ObjectModel \
-  $$PWD/../../QtPropertyBrowser
+  $$PWD/../QtPropertyBrowser
 
 DEPENDPATH += \
   $$PWD/../ObjectViewModel \
   $$PWD/../ObjectModel \
-  $$PWD/../../QtPropertyBrowser
+  $$PWD/../QtPropertyBrowser
 
 #QMAKE_POST_LINK += mkdir -f $$OUT_PWD/db
 
@@ -63,19 +63,6 @@ else:unix: LIBS += -L$$OUT_PWD/../ObjectViewModel/ -lObjectViewModel
 INCLUDEPATH += $$PWD/../ObjectGraphView
 DEPENDPATH += $$PWD/../ObjectGraphView
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Release -lQtPropertyBrowser
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Debug -lQtPropertyBrowser
-else:unix: LIBS += -L$$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Release -lQtPropertyBrowser
-
-INCLUDEPATH += $$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Release
-DEPENDPATH += $$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Release
-
-win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Release/libQtPropertyBrowser.so
-else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Debug/libQtPropertyBrowser.so
-else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Release/QtPropertyBrowser.lib
-else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Debug/QtPropertyBrowser.lib
-else:unix: PRE_TARGETDEPS += $$PWD/../../build-QtPropertyBrowser-Qt_6_4_3-Release/libQtPropertyBrowser.so
-
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../ObjectModel/release/ -lObjectModel
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../ObjectModel/debug/ -lObjectModel
 else:unix: LIBS += -L$$OUT_PWD/../ObjectModel/ -lObjectModel
@@ -89,3 +76,10 @@ else:unix: LIBS += -L$$OUT_PWD/../ObjectGraphUtil/ -lObjectGraphUtil
 
 INCLUDEPATH += $$PWD/../ObjectGraphUtil
 DEPENDPATH += $$PWD/../ObjectGraphUtil
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../QtPropertyBrowser/release/ -lQtPropertyBrowser
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../QtPropertyBrowser/debug/ -lQtPropertyBrowser
+else:unix: LIBS += -L$$OUT_PWD/../QtPropertyBrowser/ -lQtPropertyBrowser
+
+INCLUDEPATH += $$PWD/../QtPropertyBrowser
+DEPENDPATH += $$PWD/../QtPropertyBrowser

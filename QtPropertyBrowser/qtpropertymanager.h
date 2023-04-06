@@ -42,7 +42,7 @@
 #define QTPROPERTYMANAGER_H
 
 #include "qtpropertybrowser.h"
-#include <QRegExp>
+#include <QRegularExpression>
 
 
 #if QT_VERSION >= 0x040400

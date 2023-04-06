@@ -1002,8 +1002,8 @@ void QtLineEditFactory::connectPropertyManager(QtStringPropertyManager *manager)
 {
     connect(manager, SIGNAL(valueChanged(QtProperty *, const QString &)),
                 this, SLOT(slotPropertyChanged(QtProperty *, const QString &)));
-    connect(manager, SIGNAL(regExpChanged(QtProperty *, const QRegExp &)),
-                this, SLOT(slotRegExpChanged(QtProperty *, const QRegExp &)));
+    connect(manager, SIGNAL(regExpChanged(QtProperty *, const QRegularExpression &)),
+                this, SLOT(slotRegExpChanged(QtProperty *, const QRegularExpression &)));
 }
 
 /*!

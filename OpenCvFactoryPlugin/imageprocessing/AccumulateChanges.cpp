@@ -10,6 +10,8 @@ AccumulateChanges::AccumulateChanges(QObject* parent)
     , _noiseThreshold(0)
     , _areaThreshold(0)
     , _filterWeight(1.0)
+    , _keyFrameInterval(0)
+    , _framesUntilNextUpdate(0)
     , _accumulator()
 {
 }
@@ -54,15 +56,23 @@ void AccumulateChanges::in(const QVariant &variant) {
         }
         cv::Mat absDiff;
         cv::absdiff(sample,_accumulator, absDiff);
-        cv::pow(absDiff,2,absDiff);
+        //cv::pow(absDiff,2,absDiff);
         cv::Mat updateMask = absDiff > _noiseThreshold;
         int count = cv::countNonZero(updateMask);
-        if (count > _areaThreshold) {
-            cv::accumulateWeighted(sample, _accumulator, _filterWeight, updateMask);
-            cv::Mat accumulatorOutput;
-            _accumulator.convertTo(accumulatorOutput,matEvent.mat().type());
-            emit out(QVariant::fromValue(MatEvent(accumulatorOutput,matEvent.timestamp())));
+        if (_keyFrameInterval != 0 && _framesUntilNextUpdate == 0) {
+            cv::accumulateWeighted(sample, _accumulator, _filterWeight);
+            _framesUntilNextUpdate = _keyFrameInterval;
         }
+        else if (count > _areaThreshold) {
+            cv::accumulateWeighted(sample, _accumulator, _filterWeight, updateMask);
+            _framesUntilNextUpdate = _keyFrameInterval;
+        }
+        else if (_keyFrameInterval != 0) {
+            _framesUntilNextUpdate--;
+        }
+        cv::Mat accumulatorOutput;
+        _accumulator.convertTo(accumulatorOutput,matEvent.mat().type());
+        emit out(QVariant::fromValue(MatEvent(accumulatorOutput,matEvent.timestamp())));
         cv::Mat diffOutput;
         absDiff.convertTo(diffOutput,matEvent.mat().type());
         emit diff(QVariant::fromValue(MatEvent(diffOutput,matEvent.timestamp())));

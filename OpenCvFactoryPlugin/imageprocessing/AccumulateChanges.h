@@ -18,6 +18,7 @@ class AccumulateChanges : public AbstractOpenCvObject
     Q_PROPERTY(int noiseThreshold READ noiseThreshold WRITE setNoiseThreshold NOTIFY noiseThresholdChanged)
     Q_PROPERTY(int areaThreshold READ areaThreshold WRITE setAreaThreshold NOTIFY areaThresholdChanged)
     Q_PROPERTY(double filterWeight READ filterWeight WRITE setFilterWeight NOTIFY filterWeightChanged)
+    Q_PROPERTY(int keyFrameInterval READ keyFrameInterval WRITE setKeyFrameInterval NOTIFY keyFrameIntervalChanged)
 
 public:
 
@@ -31,6 +32,7 @@ public:
 
     double filterWeight() const { return _filterWeight; }
 
+    int keyFrameInterval() const { return _keyFrameInterval; }
 
 public slots:
 
@@ -39,6 +41,7 @@ public slots:
     void setNoiseThreshold(int threshold) { _noiseThreshold = threshold; }
     void setAreaThreshold(int threshold) { _areaThreshold = threshold; }
     void setFilterWeight(double weight) { _filterWeight = weight; }
+    void setKeyFrameInterval(int numFrames) { _keyFrameInterval = numFrames; _framesUntilNextUpdate = 0; }
 
 signals:
 
@@ -49,12 +52,16 @@ signals:
     void noiseThresholdChanged(int);
     void areaThresholdChanged(int);
     void filterWeightChanged(double);
+    void keyFrameIntervalChanged(double);
 
 private:
 
     int _noiseThreshold;
     int _areaThreshold;
     double _filterWeight;
+    int _keyFrameInterval;
+    int _framesUntilNextUpdate;
+
     cv::Mat _accumulator;
 };
 

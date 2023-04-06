@@ -82,24 +82,10 @@ DEPENDPATH += \
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 SOURCES += \
-  AccumulateChanges.cpp \
   OpenCvFactoryPlugin.cpp \
   common/AbstractOpenCvObject.cpp \
-  imageprocessing/MatCompare.cpp \
   detectors/CannyLineDetector.cpp \
   detectors/FindContours.cpp \
-  renderers/DrawContours.cpp \
-  sensors/KinectV2SensorAsync.cpp \
-  transformations/ClipAndNormalize.cpp \
-  transformations/ConvertScaleAbs.cpp \
-  transformations/MorphologyTransformation.cpp \
-  viewers/MatViewer.cpp \
-  operations/AbsDifference.cpp \
-  operations/AddWeightedOperation.cpp \
-  operations/MaskAndCopyOperation.cpp \
-  imageprocessing/motionanalysis/AccumulateWeighted.cpp \
-  imageprocessing/ApplyColorMap.cpp \
-  imageprocessing/ApplyTerrainColorMap.cpp \
   filters/InRangeFilter.cpp \
   filters/MedianBlurFilter.cpp \
   filters/MedianFilter3D.cpp \
@@ -107,32 +93,32 @@ SOURCES += \
   filters/ThresholdFilter.cpp \
   filters/StatFilter.cpp \
   filters/BilateralFilter.cpp \
+  imageprocessing/MatCompare.cpp \
+  imageprocessing/AccumulateChanges.cpp \
+  imageprocessing/motionanalysis/AccumulateWeighted.cpp \
+  imageprocessing/ApplyColorMap.cpp \
+  imageprocessing/ApplyTerrainColorMap.cpp \
+  operations/AbsDifference.cpp \
+  operations/AddWeightedOperation.cpp \
+  operations/MaskAndCopyOperation.cpp \
+  renderers/DrawContours.cpp \
+  sensors/KinectV2SensorAsync.cpp \
+  transformations/ClipAndNormalize.cpp \
+  transformations/ConvertScaleAbs.cpp \
+  transformations/MorphologyTransformation.cpp \
+  viewers/MatViewer.cpp \
   viewers/HeightMapViewer.cpp \
 
 
 #sensors/KinectV2Sensor.cpp \
 
 HEADERS += \
-  AccumulateChanges.h \
   OpenCvFactoryPlugin.h \
   common/AbstractOpenCvObject.h \
   common/MatEvent.h \
   common/ScalarEvent.h \
   detectors/CannyLineDetector.h \
   detectors/FindContours.h \
-  renderers/DrawContours.h \
-  imageprocessing/MatCompare.h \
-  sensors/KinectV2SensorAsync.h \
-  transformations/ClipAndNormalize.h \
-  transformations/ConvertScaleAbs.h \
-  transformations/MorphologyTransformation.h \
-  viewers/MatViewer.h \
-  operations/AbsDifference.h \
-  operations/AddWeightedOperation.h \
-  operations/MaskAndCopyOperation.h \
-  imageprocessing/motionanalysis/AccumulateWeighted.h \
-  imageprocessing/ApplyColorMap.h \
-  imageprocessing/ApplyTerrainColorMap.h \
   filters/InRangeFilter.h \
   filters/MedianBlurFilter.h \
   filters/MedianFilter3D.h \
@@ -140,6 +126,20 @@ HEADERS += \
   filters/ThresholdFilter.h \
   filters/StatFilter.h \
   filters/BilateralFilter.h \
+  imageprocessing/AccumulateChanges.h \
+  imageprocessing/MatCompare.h \
+  imageprocessing/ApplyColorMap.h \
+  imageprocessing/ApplyTerrainColorMap.h \
+  imageprocessing/motionanalysis/AccumulateWeighted.h \
+  operations/AbsDifference.h \
+  operations/AddWeightedOperation.h \
+  operations/MaskAndCopyOperation.h \
+  renderers/DrawContours.h \
+  sensors/KinectV2SensorAsync.h \
+  transformations/ClipAndNormalize.h \
+  transformations/ConvertScaleAbs.h \
+  transformations/MorphologyTransformation.h \
+  viewers/MatViewer.h \
   viewers/HeightMapViewer.h \
 
 #sensors/KinectV2Sensor.h \
