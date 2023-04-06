@@ -13,9 +13,9 @@ class ControlFactoryPlugin : public ObjectFactory
 
 public:
 
-  Q_INVOKABLE ControlFactoryPlugin(QObject *parent = 0) : ObjectFactory(parent) {}
+  Q_INVOKABLE ControlFactoryPlugin(QObject *parent = 0); // : ObjectFactory(parent) {}
 
-  virtual ~ControlFactoryPlugin() {}
+  virtual ~ControlFactoryPlugin(); // {}
 
 };
 

@@ -10,6 +10,7 @@ DoubleSliderControl::DoubleSliderControl(QWidget *parent)
   _scaleMin = QSlider::minimum();
   _scaleMax = QSlider::maximum();
   connect(this,&QSlider::valueChanged,this,&DoubleSliderControl::onValueChanged);
+  setProperty("my_property",QVariant::fromValue(9999));
 }
 
 double DoubleSliderControl::scaleValue() const {
@@ -17,19 +18,19 @@ double DoubleSliderControl::scaleValue() const {
   return ratio * (_scaleMax - _scaleMin) + _scaleMin;
 }
 
-void DoubleSliderControl::setScaleMin(double dvalue) {
+void DoubleSliderControl::min(double dvalue) {
   if (dvalue != _scaleMin && dvalue != _scaleMax) {
       _scaleMin = dvalue;
     //updateDoubleValue();
-    emit scaleMinChanged(dvalue);
+    emit minChanged(dvalue);
   }
 }
 
-void DoubleSliderControl::setScaleMax(double dvalue) {
+void DoubleSliderControl::max(double dvalue) {
   if (dvalue != _scaleMax && dvalue != _scaleMin) {
     _scaleMax = dvalue;
     //updateDoubleValue();
-    emit scaleMaxChanged(dvalue);
+    emit maxChanged(dvalue);
   }
 }
 

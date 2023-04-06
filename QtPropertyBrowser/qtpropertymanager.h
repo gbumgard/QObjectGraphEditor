@@ -175,7 +175,7 @@ public:
     ~QtStringPropertyManager();
 
     QString value(const QtProperty *property) const;
-    QRegularExpression regExp(const QtProperty *property) const;
+    QRegularExpression regularExpression(const QtProperty *property) const;
 
 public Q_SLOTS:
     void setValue(QtProperty *property, const QString &val);

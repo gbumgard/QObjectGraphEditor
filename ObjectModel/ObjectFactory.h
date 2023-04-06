@@ -30,7 +30,7 @@ public:
     qRegisterMetaType<QVariantEvent>();
   }
 
-  virtual ~ObjectFactory() {}
+  virtual ~ObjectFactory(); // {}
 
   static QObject* create(const QString& name) {
     qDebug() << Q_FUNC_INFO << name;
@@ -79,7 +79,7 @@ public:
   static int loadObjectFactoryPlugins(const QStringList& pluginDirList) {
     qDebug() << Q_FUNC_INFO << pluginDirList;
     int count = 0;
-    for (auto path : pluginDirList) {
+    for (auto& path : pluginDirList) {
       QDir pluginDir(path);
       foreach (QString fileName, pluginDir.entryList(QDir::Files)) {
         QString path = pluginDir.absoluteFilePath(fileName);

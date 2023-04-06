@@ -95,3 +95,11 @@ unix {
     target.path = ../plugins
     INSTALLS += target
 }
+
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../ObjectModel/release/ -lObjectModel
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../ObjectModel/debug/ -lObjectModel
+else:unix: LIBS += -L$$OUT_PWD/../ObjectModel/ -lObjectModel
+
+INCLUDEPATH += $$PWD/../ObjectModel
+DEPENDPATH += $$PWD/../ObjectModel
+

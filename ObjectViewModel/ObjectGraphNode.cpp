@@ -499,9 +499,13 @@ void ObjectGraphNode::buildNode() {
       std::string token;
       while(std::getline(tokenizer,token,',')) {
         int index = metaObject->indexOfSignal(token.c_str());
-        if (index != -1 && metaObject->method(index).access() == QMetaMethod::Public) {
-          qDebug() << "adding" << index << token.c_str();
-          _signalMethodMap.push_back(metaObject->method(index));
+        if (index != -1) {
+          QMetaMethod metaMethod = metaObject->method(index);
+          qDebug() << "checking signal " << metaMethod.methodSignature() << " tag: " << metaMethod.tag();
+          if (metaMethod.access() == QMetaMethod::Public && strcmp(metaMethod.tag(),"PRIVATE_SIGNAL_TAG") != 0) {
+            qDebug() << "adding" << index << token.c_str();
+            _signalMethodMap.push_back(metaObject->method(index));
+          }
         }
         else {
           qWarning() << "CLASSINFO signal-order entry" << token.c_str() << "is undefined or inaccessible";
@@ -512,7 +516,9 @@ void ObjectGraphNode::buildNode() {
   else {
     for (int index = methodOffset; index < metaObject->methodCount(); index++) {
       QMetaMethod method = metaObject->method(index);
-      if (method.methodType() == QMetaMethod::Signal && method.access() == QMetaMethod::Public) {
+      if (method.methodType() == QMetaMethod::Signal
+          && strcmp(method.tag(),"PRIVATE_SIGNAL_TAG") != 0
+          && method.access() == QMetaMethod::Public) {
         _signalMethodMap.push_back(method);
       }
     }

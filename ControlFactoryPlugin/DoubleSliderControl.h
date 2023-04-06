@@ -6,6 +6,11 @@
 #include <QThread>
 #include <QDebug>
 
+#ifndef Q_MOC_RUN
+#  define PRIVATE_SIGNAL_TAG
+#endif
+
+
 class DoubleSliderControl : public QSlider
 {
   Q_OBJECT
@@ -13,12 +18,12 @@ class DoubleSliderControl : public QSlider
   Q_CLASSINFO("class-alias","Double Slider")
   Q_CLASSINFO("directory","Qt/Controls")
 
-  Q_PROPERTY(double minimum READ minimum WRITE setMinimum NOTIFY minimumChanged)
-  Q_PROPERTY(double maximum READ maximum WRITE setMaximum NOTIFY maximumChanged)
-  Q_PROPERTY(double scaleMin READ scaleMin WRITE setScaleMin NOTIFY scaleMinChanged)
-  Q_PROPERTY(double scaleMax READ scaleMax WRITE setScaleMax NOTIFY scaleMaxChanged)
-  Q_PROPERTY(double scaleValue READ scaleValue WRITE setScaleValue NOTIFY out)
-  Q_PROPERTY(QString caption READ caption WRITE setCaption NOTIFY captionChanged)
+  //Q_PROPERTY(double minimum READ minimum WRITE setMinimum NOTIFY minimumChanged)
+  //Q_PROPERTY(double maximum READ maximum WRITE setMaximum NOTIFY maximumChanged)
+  Q_PROPERTY(double min READ min WRITE min NOTIFY minChanged)
+  Q_PROPERTY(double max READ max WRITE max NOTIFY maxChanged)
+  //Q_PROPERTY(double scaleValue READ scaleValue WRITE setScaleValue NOTIFY out)
+  Q_PROPERTY(QString caption READ caption WRITE caption NOTIFY captionChanged)
 
 public:
 
@@ -36,11 +41,11 @@ public:
 
   double scaleValue() const;
 
-  double scaleMin() const {
+  double min() const {
       return _scaleMin;
   }
 
-  double scaleMax() const {
+  double max() const {
       return _scaleMax;
   }
 
@@ -49,31 +54,34 @@ public:
     return QObject::objectName();
   }
 
-  void setCaption(const QString& caption) {
+  void caption(const QString& caption) {
     QObject::setObjectName(caption);
   }
 
 signals:
 
   void out(double value);
+
   void minimumChanged(int value);
   void maximumChanged(int value);
-  void scaleMinChanged(double);
-  void scaleMaxChanged(double);
-  void scaleValueChanged(double);
   void captionChanged(QString&);
+  void minChanged(double);
+  void maxChanged(double);
+  void scaleValueChanged(double);
+
 
 public slots:
 
-  void setMinimum(int value) { QSlider::setMinimum(value); emit minimumChanged(value);}
-  void setMaximum(int value) { QSlider::setMaximum(value); emit maximumChanged(value);}
-  void setScaleValue(double value) { in(value); }
-  void setScaleMin(double dvalue);
-  void setScaleMax(double dvalue);
+  void min(double dvalue);
+  void max(double dvalue);
 
   void in(double value);
 
 private slots:
+
+  void setMinimum(int value) { QSlider::setMinimum(value); emit minimumChanged(value);}
+  void setMaximum(int value) { QSlider::setMaximum(value); emit maximumChanged(value);}
+  void setScaleValue(double value) { in(value); }
 
   void onValueChanged(int);
 

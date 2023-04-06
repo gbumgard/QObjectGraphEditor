@@ -5,7 +5,7 @@ SUBDIRS += \
     ObjectViewModel \
     ConverterFactoryPlugin \
     ControlFactoryPlugin \
-    OpenCvFactoryPlugin \
+    #OpenCvFactoryPlugin \
     QtPropertyBrowser \
     QObjectGraphEditorApp \
     ObjectGraphUtil

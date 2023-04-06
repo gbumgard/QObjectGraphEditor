@@ -1002,8 +1002,8 @@ void QtLineEditFactory::connectPropertyManager(QtStringPropertyManager *manager)
 {
     connect(manager, SIGNAL(valueChanged(QtProperty *, const QString &)),
                 this, SLOT(slotPropertyChanged(QtProperty *, const QString &)));
-    connect(manager, SIGNAL(regExpChanged(QtProperty *, const QRegularExpression &)),
-                this, SLOT(slotRegExpChanged(QtProperty *, const QRegularExpression &)));
+    connect(manager, SIGNAL(regularExpressionChanged(QtProperty *, const QRegularExpression &)),
+            this, SLOT(slotRegularExpressionChanged(QtProperty *, const QRegularExpression &)));
 }
 
 /*!
@@ -1016,17 +1016,17 @@ QWidget *QtLineEditFactory::createEditor(QtStringPropertyManager *manager,
 {
 
     QLineEdit *editor = d_ptr->createEditor(property, parent);
-    QRegularExpression regExp = manager->regExp(property);
+    QRegularExpression regExp = manager->regularExpression(property);
     if (regExp.isValid()) {
         QValidator *validator = new QRegularExpressionValidator(regExp, editor);
         editor->setValidator(validator);
     }
     editor->setText(manager->value(property));
 
-    connect(editor, SIGNAL(textEdited(const QString &)),
-                this, SLOT(slotSetValue(const QString &)));
-    connect(editor, SIGNAL(destroyed(QObject *)),
-                this, SLOT(slotEditorDestroyed(QObject *)));
+    connect(editor, SIGNAL(textEdited(const QString&)),
+                this, SLOT(slotSetValue(const QString&)));
+    connect(editor, SIGNAL(destroyed(QObject*)),
+                this, SLOT(slotEditorDestroyed(QObject*)));
     return editor;
 }
 

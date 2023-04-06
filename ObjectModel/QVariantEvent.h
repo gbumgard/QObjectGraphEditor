@@ -45,6 +45,8 @@ public:
   {
   }
 
+  virtual ~QVariantEvent() {}
+
   /**
    * @brief operator =
    * @param that

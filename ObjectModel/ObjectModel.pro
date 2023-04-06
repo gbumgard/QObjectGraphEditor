@@ -26,6 +26,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     Connection.cpp \
+    ObjectFactory.cpp \
     ObjectModel.cpp \
     SimpleObject.cpp \
     ThreadedObject.cpp
