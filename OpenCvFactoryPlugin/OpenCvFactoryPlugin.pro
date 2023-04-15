@@ -8,7 +8,6 @@ QT       += core widgets gui
 QT +=  opengl
 QT += datavisualization
 
-
 TARGET = OpenCvFactoryPlugin
 TEMPLATE = lib
 CONFIG += plugin
@@ -43,7 +42,7 @@ LIBS += -L/usr/local/lib -L/usr/lib/x86_64-linux-gnu \
   -lpcl_ml                -lpcl_octree              -lpcl_outofcore               -lpcl_people \
   -lpcl_recognition       -lpcl_registration        -lpcl_sample_consensus        -lpcl_search \
   -lpcl_segmentation      -lpcl_stereo              -lpcl_surface                 -lpcl_tracking \
-  -lpcl_visualization
+  -lpcl_visualization \
 
 #  -lpcl_common \
 #  -lpcl_cuda_features \
@@ -83,6 +82,7 @@ DEPENDPATH += \
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 SOURCES += \
   OpenCvFactoryPlugin.cpp \
+  Sandbox.cpp \
   common/AbstractOpenCvObject.cpp \
   detectors/CannyLineDetector.cpp \
   detectors/FindContours.cpp \
@@ -90,9 +90,13 @@ SOURCES += \
   filters/MedianBlurFilter.cpp \
   filters/MedianFilter3D.cpp \
   filters/RunningStatistics.cpp \
+  filters/TemporalMedianFilter.cpp \
+  filters/TemporalMedianFilterGpu.cpp \
   filters/ThresholdFilter.cpp \
   filters/StatFilter.cpp \
   filters/BilateralFilter.cpp \
+  imageprocessing/BackgroundSubtractorCNT.cpp \
+  imageprocessing/BackgroundSubtractorKNN.cpp \
   imageprocessing/MatCompare.cpp \
   imageprocessing/AccumulateChanges.cpp \
   imageprocessing/motionanalysis/AccumulateWeighted.cpp \
@@ -114,6 +118,7 @@ SOURCES += \
 
 HEADERS += \
   OpenCvFactoryPlugin.h \
+  Sandbox.h \
   common/AbstractOpenCvObject.h \
   common/MatEvent.h \
   common/ScalarEvent.h \
@@ -123,10 +128,14 @@ HEADERS += \
   filters/MedianBlurFilter.h \
   filters/MedianFilter3D.h \
   filters/RunningStatistics.h \
+  filters/TemporalMedianFilter.h \
+  filters/TemporalMedianFilterGpu.h \
   filters/ThresholdFilter.h \
   filters/StatFilter.h \
   filters/BilateralFilter.h \
   imageprocessing/AccumulateChanges.h \
+  imageprocessing/BackgroundSubtractorCNT.h \
+  imageprocessing/BackgroundSubtractorKNN.h \
   imageprocessing/MatCompare.h \
   imageprocessing/ApplyColorMap.h \
   imageprocessing/ApplyTerrainColorMap.h \

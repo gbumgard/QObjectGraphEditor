@@ -9,6 +9,8 @@ class SliderControl : public QSlider
 
   Q_CLASSINFO("class-alias","Slider")
   Q_CLASSINFO("directory","Qt/Controls")
+  Q_CLASSINFO("slots","in(int)")
+  Q_CLASSINFO("signals","out(int)")
 
   Q_PROPERTY(QString caption READ caption WRITE setCaption)
 

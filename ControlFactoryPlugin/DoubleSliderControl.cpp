@@ -1,5 +1,5 @@
 #include "DoubleSliderControl.h"
-#include "ControlFactoryPlugin.h"
+#include "ObjectFactory.h"
 
 REGISTER_CLASS(DoubleSliderControl)
 

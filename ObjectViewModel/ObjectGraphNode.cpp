@@ -464,8 +464,15 @@ void ObjectGraphNode::buildNode() {
     methodOffset = v.toInt();
   }
 
-  if (classInfo.keys().contains("slot-order")) {
-    std::string slotList = classInfo["slot-order"].toUtf8().constData();
+  if (classInfo.keys().contains("slots")) {
+    qDebug() << "looking for slot signatures listed in 'slot-order' class info in follow list.";
+    for (int i=0; i < metaObject->methodCount(); i++) {
+      QMetaMethod method = metaObject->method(i);
+      if (method.methodType() == QMetaMethod::Slot) {
+          qDebug() << "  " << metaObject->method(i).methodSignature();
+      }
+    }
+    std::string slotList = classInfo["slots"].toUtf8().constData();
     if (!slotList.empty()) {
       qDebug() << "slot-order" << slotList.c_str();
       std::stringstream tokenizer(slotList);
@@ -491,8 +498,16 @@ void ObjectGraphNode::buildNode() {
     }
   }
 
-  if (classInfo.keys().contains("signal-order")) {
-    std::string signalList = classInfo["signal-order"].toUtf8().constData();
+  auto keys = classInfo.keys();
+  if (keys.contains("signals")) {
+    qDebug() << "looking for signal signatures listed in 'signal-order' class info in follow list.";
+    for (int i=0; i < metaObject->methodCount(); i++) {
+      QMetaMethod method = metaObject->method(i);
+      if (method.methodType() == QMetaMethod::Signal) {
+        qDebug() << "  " << metaObject->method(i).methodSignature();
+      }
+    }
+    std::string signalList = classInfo["signals"].toUtf8().constData();
     if (!signalList.empty()) {
       qDebug() << "signal-order" << signalList.c_str();
       std::stringstream tokenizer(signalList);

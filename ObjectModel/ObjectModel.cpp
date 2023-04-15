@@ -15,6 +15,7 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <list>
 
 QUuid ObjectModel::_uuid("{1bc25d19-117d-427c-bc5f-3019109c681d}");
 
@@ -254,21 +255,29 @@ bool ObjectModel::deserialize(QDataStream &in, bool makeUnique, QMap<QUuid, QUui
 
 
     qDebug() << "\nSRetrieved Objects";
-    for (auto objectUuid : objectClassNames.keys()) {
-      qDebug() << "  " << objectUuid;
+    QMapIterator<QUuid,QString> names(objectClassNames);
+    while (names.hasNext()) {
+      names.next();
+      qDebug() << "  " << names.key();
     }
 
     qDebug() << "\nSRetrieved Object Model Properties";
-    for (auto objectUuid : modelProperties.keys()) {
-      qDebug() << "Stored Object Properties" << objectUuid;
-      for (auto name : modelProperties[objectUuid].keys()) {
-        qDebug() << "  " << objectUuid << name << modelProperties[objectUuid][name];
+    QMapIterator<QUuid,QMap<QString,QVariant>> props(modelProperties);
+    while (props.hasNext()) {
+      props.next();
+      qDebug() << "Stored Object Properties" << props.key();
+      QMapIterator<QString,QVariant> objProps(modelProperties[props.key()]);
+      while (objProps.hasNext()) {
+        objProps.next();
+        qDebug() << "  " << props.key() << objProps.key() << modelProperties[props.key()][objProps.key()];
       }
     }
 
     qDebug() << "\nRetrieved Connections";
     for (auto connection : connections) qDebug() << "  " <<  connection;
 
+    qDebug() << Q_FUNC_INFO;
+    topologicalSort();
     return true;
   }
 
@@ -277,16 +286,21 @@ bool ObjectModel::deserialize(QDataStream &in, bool makeUnique, QMap<QUuid, QUui
 
 
 void ObjectModel::dump() const {
-  for (auto key : _objectIndex.keys()) {
-    qDebug() << "object-id=" << key << " class-name=" << _objectIndex[key]->metaObject()->className();
+  QMapIterator<QUuid,QObject*> objs(_objectIndex);
+  while (objs.hasNext()) {
+    objs.next();
+    qDebug() << "object-id=" << objs.key() << " class-name=" << _objectIndex[objs.key()]->metaObject()->className();
   }
-  for (auto key : _connectionIndex.keys()) {
-    Connection connection = _connectionIndex[key];
-    qDebug()  << "connection-id=" << key
-              << " sender-id=" << connection.senderUuid()
-              << " signal-index=" << connection.signalSignature()
-              << " receiver-id=" << connection.receiverUuid()
-              << " slot-index=" << connection.slotSignature();
+
+  QMapIterator<QUuid,Connection> conns(_connectionIndex);
+  while (conns.hasNext()) {
+    conns.next();
+    Connection connection = _connectionIndex[conns.key()];
+    qDebug()  << "connection-id=" << conns.key()
+             << " sender-id=" << connection.senderUuid()
+             << " signal-index=" << connection.signalSignature()
+             << " receiver-id=" << connection.receiverUuid()
+             << " slot-index=" << connection.slotSignature();
   }
 }
 
@@ -304,10 +318,16 @@ void ObjectModel::createObject(const QString &className, const QUuid& objectUuid
       _objectIndex.insert(objectUuid,object);
       emit objectAdded(objectUuid);
     }
+    qDebug() << Q_FUNC_INFO;
+    for(auto& conn : _connectionIndex) {
+      qDebug() << "conn: " << conn.connectionUuid() << "sender:" << conn.senderUuid() << "[" << conn.signalSignature() << "] receiver:" << conn.receiverUuid()  << "[" << conn.slotSignature() << "]";
+    }
+    topologicalSort();
   }
   else {
     qWarning() << "object" << objectUuid << "already exists!";
   }
+
 }
 
 bool ObjectModel::removeObject(const QUuid &objectUuid) {
@@ -317,7 +337,7 @@ bool ObjectModel::removeObject(const QUuid &objectUuid) {
     if (_objectConnectionIndex.contains(objectUuid)) {
       QSet<QUuid> connectionUuids;
       QMap<QString,QSet<QUuid>> methodConnectionIndex = _objectConnectionIndex.take(objectUuid);
-      for (auto methodConnectionSet : methodConnectionIndex) {
+      for (auto& methodConnectionSet : methodConnectionIndex) {
         for (auto connectionUuid : methodConnectionSet) {
           qDebug() << "remove connection" << connectionUuid;
           connectionUuids.insert(connectionUuid);
@@ -326,6 +346,15 @@ bool ObjectModel::removeObject(const QUuid &objectUuid) {
       if (!connectionUuids.empty()) {
         removeConnections(connectionUuids);
       }
+      for(auto& conn : _connectionIndex) {
+        qDebug() << "conn: " << conn.connectionUuid() << "sender:" << conn.senderUuid() << "[" << conn.signalSignature() << "] receiver:" << conn.receiverUuid()  << "[" << conn.slotSignature() << "]";
+      }
+      qDebug() << Q_FUNC_INFO;
+      for(auto& conn : _connectionIndex) {
+        qDebug() << "conn: " << conn.connectionUuid() << "sender:" << conn.senderUuid() << "[" << conn.signalSignature() << "] receiver:" << conn.receiverUuid()  << "[" << conn.slotSignature() << "]";
+      }
+      topologicalSort();
+
     }
 
     QObject* obj = _objectIndex.take(objectUuid);
@@ -333,12 +362,15 @@ bool ObjectModel::removeObject(const QUuid &objectUuid) {
     if (obj) {
       qDebug() << "delete object" << objectUuid;
       obj->setParent(nullptr);
+      obj->deleteLater();
+#if 0
       if (dynamic_cast<QWidget*>(obj)) {
         obj->deleteLater();
       }
       else {
         delete obj;
       }
+#endif
     }
 
     emit objectRemoved(objectUuid);
@@ -366,6 +398,12 @@ bool ObjectModel::removeObjects(QSet<QUuid>& objectUuids) {
 
   // Return the set of objects that were actually removed.
   objectUuids = removedUuids;
+
+  qDebug() << Q_FUNC_INFO;
+  for(auto& conn : _connectionIndex) {
+    qDebug() << "conn: " << conn.connectionUuid() << "sender:" << conn.senderUuid() << "[" << conn.signalSignature() << "] receiver:" << conn.receiverUuid()  << "[" << conn.slotSignature() << "]";
+  }
+  topologicalSort();
 
   return true;
 }
@@ -462,6 +500,12 @@ void ObjectModel::createConnection(const QUuid& connectionUuid,
     // Add the connection UUID to the receiver->slot->connection map.
     _objectConnectionIndex[receiverUuid][slotSignature].insert(connectionUuid);
 
+    qDebug() << Q_FUNC_INFO;
+    for(auto& conn : _connectionIndex) {
+      qDebug() << "conn: " << conn.connectionUuid() << "sender:" << conn.senderUuid() << "[" << conn.signalSignature() << "] receiver:" << conn.receiverUuid()  << "[" << conn.slotSignature() << "]";
+    }
+    topologicalSort();
+
     emit connectionAdded(connectionUuid);
   }
 }
@@ -483,6 +527,12 @@ bool ObjectModel::removeConnection(const QUuid &connectionUuid) {
 
     _objectConnectionIndex[senderId][signalSignature].remove(connectionUuid);
     _objectConnectionIndex[receiverId][slotSignature].remove(connectionUuid);
+
+    qDebug() << Q_FUNC_INFO;
+    for(auto& conn : _connectionIndex) {
+      qDebug() << "conn: " << conn.connectionUuid() << "sender:" << conn.senderUuid() << "[" << conn.signalSignature() << "] receiver:" << conn.receiverUuid()  << "[" << conn.slotSignature() << "]";
+    }
+    topologicalSort();
 
     emit connectionRemoved(connectionUuid);
 
@@ -509,6 +559,11 @@ bool ObjectModel::removeConnections(QSet<QUuid>& connectionUuids) {
 
   // Return the set of connections actually removed.
   connectionUuids = removedUuids;
+  qDebug() << Q_FUNC_INFO;
+  for(auto& conn : _connectionIndex) {
+    qDebug() << "conn: " << conn.connectionUuid() << "sender:" << conn.senderUuid() << "[" << conn.signalSignature() << "] receiver:" << conn.receiverUuid()  << "[" << conn.slotSignature() << "]";
+  }
+  topologicalSort();
 
   return true;
 }
@@ -736,30 +791,33 @@ bool ObjectModel::connect(const QUuid& senderUuid,
 
     // Check that the signal and slot is valid
     int signalIndex = senderMetaObject->indexOfSignal(signalSignature.toUtf8());
-    int slotIndex = receiverMetaObject->indexOfSlot(slotSignature.toUtf8());
 
-    if (signalIndex != -1 && slotIndex != -1) {
+    if (signalIndex != -1) {
 
-      result = QMetaObject::checkConnectArgs(senderMetaObject->method(signalIndex),
-                                             receiverMetaObject->method(slotIndex));
+      int slotIndex = receiverMetaObject->indexOfSlot(slotSignature.toUtf8());
 
-      if (result) {
-        result = QObject::connect(sender,
-                                  senderMetaObject->method(signalIndex),
-                                  receiver,
-                                  receiverMetaObject->method(slotIndex));
+      if (slotIndex != -1) {
+
+        result = QMetaObject::checkConnectArgs(senderMetaObject->method(signalIndex),
+                                                 receiverMetaObject->method(slotIndex));
+
+        if (result) {
+            result = QObject::connect(sender,
+                                      senderMetaObject->method(signalIndex),
+                                      receiver,
+                                      receiverMetaObject->method(slotIndex),
+                                      Qt::QueuedConnection);
+        }
+        else {
+            qWarning() << "ERROR! signal" << signalSignature << "cannot be connected to slot" << slotSignature;
+        }
       }
       else {
-        qWarning() << "ERROR! signal" << signalSignature << "cannot be connected to slot" << slotSignature;
+        qWarning() << "ERROR! slot" << slotSignature << "does not exist";
       }
     }
     else {
-
-      qWarning() << "ERROR! one or both connection endpoints do not exist";
-
-      if (signalIndex == -1) qWarning() << "sender" << senderMetaObject->className() << senderUuid << "signal" << signalSignature << "does not exist";
-      if (slotIndex == -1) qWarning() << "receiver" << receiverMetaObject->className() << receiverUuid << "slot" << slotSignature << "does not exist";
-
+      qWarning() << "ERROR! signal" << signalSignature << "does not exist";
     }
   }
   else {
@@ -957,3 +1015,36 @@ void ObjectModel::updateObjectStatus(QObject* obj) {
     qWarning() << Q_FUNC_INFO << "object id property is missing on object" << obj->objectName();
   }
 }
+
+void ObjectModel::topologicalSort(const QUuid& senderUuid, std::list<QUuid>& stack, QMap<QUuid,bool>& visited) const {
+    if (!visited[senderUuid]) {
+        visited[senderUuid] = true;
+        auto methodConnectionIndex = _objectConnectionIndex[senderUuid];
+        for (auto& methodConnections : methodConnectionIndex) {
+          for (auto& connectionUuid : methodConnections) {
+            auto receiverUuid = _connectionIndex[connectionUuid].receiverUuid();
+            topologicalSort(receiverUuid,stack,visited);
+          }
+        }
+        stack.push_front(senderUuid);
+    }
+}
+
+std::list<QUuid> ObjectModel::topologicalSort() const {
+  std::list<QUuid> stack;
+  QMap<QUuid,bool> visited;
+
+  QMapIterator<QUuid,QObject*> objs(_objectIndex);
+  while (objs.hasNext()) {
+    objs.next();
+    topologicalSort(objs.key(),stack,visited);
+  }
+
+  int i = 0;
+  qDebug() << "object update order:";
+  for(auto objectUuid : stack) {
+    qDebug() << i++ << ")" << objectUuid << object(objectUuid)->metaObject()->className();
+  }
+  return stack;
+}
+

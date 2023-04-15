@@ -1,6 +1,8 @@
 #include "TemporalMedianFilter.h"
+#include "ObjectModel.h"
 #include <QMutexLocker>
-#include "OpenCvFactoryPlugin.h"
+#include <QFuture>
+#include <QtConcurrent/QtConcurrent>
 
 #include <opencv2/opencv.hpp>
 
@@ -9,81 +11,72 @@
 REGISTER_CLASS(TemporalMedianFilter)
 
 TemporalMedianFilter::TemporalMedianFilter(QObject* parent)
-  : ThreadedObject(parent)
-  , _aperatureSize(3)
-  , _width(0)
-  , _height(0)
+  : AbstractOpenCvObject(parent)
+  , _aperatureSize(0)
 {
-  start();
 }
 
 void TemporalMedianFilter::aperatureSize(int aperatureSize) {
-  UpdateLock lock(this);
-  if (aperatureSize < 3) aperatureSize = 3;
-  else if (aperatureSize > 7) aperatureSize = 7;
-  _aperatureSize = 1 + (aperatureSize / 2) * 2;
-  qDebug() << Q_FUNC_INFO << "aperature size" << _aperatureSize;
-  while(_inputBuffer.size() > (unsigned)_aperatureSize) {
-    _inputBuffer.erase(_inputBuffer.begin());
-  }
+  if (aperatureSize < 0) aperatureSize = 0;
+  else if (aperatureSize > 2) aperatureSize = 2;
+  _aperatureSize = aperatureSize;
+  _frameBuffer.clear();
 }
 
-void TemporalMedianFilter::in(const cv::Mat &mat) {
-  qDebug() << Q_FUNC_INFO << "wait";
-  UpdateLock lock(this);
-  qDebug() << Q_FUNC_INFO << "continue";
-  if (mat.rows != _height || mat.cols != _width) {
-    qDebug() << Q_FUNC_INFO << "clear buffer for size change";
-    _inputBuffer.clear();
-    _height = mat.rows;
-    _width = mat.cols;
-  }
+void TemporalMedianFilter::in(const QVariant &variant) {
+  if (variant.userType() == MatEvent::userType()) {
+    ObjectModel::setObjectStatus(this,ObjectModel::STATUS_OK,"OK");
+    MatEvent matEvent = qvariant_cast<MatEvent>(variant);
 
-  _inputBuffer.push_back(mat.clone());
+    cv::Mat mat(matEvent.mat());
 
-  while (_inputBuffer.size() > (unsigned)_aperatureSize) {
-    qDebug() << Q_FUNC_INFO << "erase first image to match aperature size" << _inputBuffer.size() << _aperatureSize;
-    _inputBuffer.erase(_inputBuffer.begin());
-  }
-}
-
-void TemporalMedianFilter::update() {
-  qDebug() << Q_FUNC_INFO;
-  std::vector<cv::Mat> currentImages;
-  int currentAperatureSize;
-  int currentWidth, currentHeight;
-  {
-    WaitForUpdateLock lock(this);
-    qDebug() << Q_FUNC_INFO << "awake buffer depth:" << _inputBuffer.size() << "aperature:" << _aperatureSize;
-    if (_stop) return;
-    for (auto iter = _inputBuffer.begin(); iter != _inputBuffer.end(); iter++) {
-      currentImages.push_back(*iter);
+    if (!_frameBuffer.empty() &&
+        (mat.rows != _frameBuffer[0].rows || mat.cols != _frameBuffer[0].cols)) {
+        _frameBuffer.clear();
     }
-    currentAperatureSize = _aperatureSize;
-    currentWidth = _width;
-    currentHeight = _height;
-  }
 
-  if (currentImages.size() > (unsigned)currentAperatureSize / 2) {
-    if (currentImages.size() >= (unsigned)currentAperatureSize) {
-      cv::Mat median(currentHeight, currentWidth, CV_8UC1, cv::Scalar(0));
-      int* values = new int[currentAperatureSize];
-      for (int x = 0; x < currentWidth; x++) {
-        for (int y = 0; y < currentHeight; y++) {
-          for (int z = 0; z < currentAperatureSize; ++z)
-          {
-            *(values + z) = currentImages.at(z).at<uint8_t>(y,x);
-          }
-          std::sort(values, values+currentAperatureSize);
-          int center = currentAperatureSize / 2;
-          median.at<uint8_t>(y,x) = currentAperatureSize % 2 ? *(values + center)
-                                                       : (*(values + center - 1) + *(values + center)) / 2;
+    qDebug() << "input" << mat;
+
+    _frameBuffer.push_back(mat.clone());
+
+    size_t kernelSize = (_aperatureSize + 1) * 2 + 1;
+
+    if (_frameBuffer.size() < kernelSize) {
+        while (_frameBuffer.size() < kernelSize) {
+            _frameBuffer.push_back(mat.clone());
         }
-      }
-      emit out(median);
     }
     else {
-      emit out(currentImages[currentAperatureSize/2]);
+        while (_frameBuffer.size() > kernelSize) {
+            _frameBuffer.erase(_frameBuffer.begin());
+        }
     }
+
+    if (_task.isRunning()) return;
+
+    if (_task.isValid()) {
+        emit out(QVariant::fromValue(MatEvent(_task.takeResult())));
+    }
+
+    _task = QtConcurrent::run([&]() {
+        std::vector<cv::Mat> frameBuffer(_frameBuffer);
+        size_t center = _frameBuffer.size() / 2;
+        cv::Mat median(frameBuffer[0].rows, frameBuffer[0].cols, CV_8UC1);
+        qDebug() << "median" << median;
+        for (int x = 0; x < median.cols; x++) {
+            for (int y = 0; y < median.rows; y++) {
+                std::vector<uint8_t> values;
+                for (auto frame : frameBuffer) {
+                    values.push_back(frame.at<uint8_t>(y,x));
+                }
+                std::sort(values.begin(), values.end());
+                median.at<uint8_t>(y,x) = values[center];
+            }
+        }
+        return median;
+    });
+  }
+  else {
+    ObjectModel::setObjectStatus(this,ObjectModel::STATUS_INVALID_SLOT_ARGUMENT_FORMAT,"Unsupported SRC");
   }
 }

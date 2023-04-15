@@ -2,12 +2,16 @@
 #define TEMPORALMEDIANFILTER_H
 
 #include <QObject>
-#include "ThreadedObject.h"
 #include <opencv2/core.hpp>
 #include <vector>
 #include <QMutex>
+#include <QVariant>
+#include <QFuture>
 
-class TemporalMedianFilter : public ThreadedObject
+#include "MatEvent.h"
+#include "AbstractOpenCvObject.h"
+
+class TemporalMedianFilter : public AbstractOpenCvObject
 {
 
   Q_OBJECT
@@ -29,29 +33,23 @@ public:
 
   int aperatureSize() const { return _aperatureSize; }
 
+  void aperatureSize(int aperatureSize);
+
 public slots:
 
-  void in(const cv::Mat& mat);
-
-  void aperatureSize(int aperatureSize);
+  QVARIANT_PAYLOAD(MatEvent) void in(const QVariant& event);
 
 signals:
 
-  void out(const cv::Mat& mat);
+  QVARIANT_PAYLOAD(MatEvent) void out(const QVariant& event);
 
 protected:
 
-  void update();
-
 private:
 
-  QMutex _mutex;
-  int _aperatureSize;
-  int _width;
-  int _height;
-  std::vector<cv::Mat> _inputBuffer;
-  std::vector<cv::Mat> _processingBuffer;
-
+  size_t _aperatureSize;
+  std::vector<cv::Mat> _frameBuffer;
+  QFuture<cv::Mat> _task;
 };
 
 #endif // TEMPORALMEDIANFILTER_H

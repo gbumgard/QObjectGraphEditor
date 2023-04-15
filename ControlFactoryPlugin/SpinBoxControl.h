@@ -9,6 +9,8 @@ class SpinBoxControl : public QSpinBox
 
   Q_CLASSINFO("class-alias","Spin Box")
   Q_CLASSINFO("directory","Qt/Controls")
+  Q_CLASSINFO("slots","in(int)")
+  Q_CLASSINFO("signals","out(int)")
 
   Q_PROPERTY(QString caption READ caption WRITE setCaption)
 

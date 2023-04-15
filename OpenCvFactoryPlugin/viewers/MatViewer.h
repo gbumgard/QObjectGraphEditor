@@ -13,8 +13,8 @@ class MatViewer : public QWidget
 
   Q_CLASSINFO("class-alias","Mat Viewer")
   Q_CLASSINFO("directory","OpenCV/Output")
-  Q_CLASSINFO("slot-order","src(QVariant)")
-  Q_CLASSINFO("signal-order","NONE")
+  Q_CLASSINFO("slots","in(QVariant)")
+  Q_CLASSINFO("signals","")
 
   Q_PROPERTY(QString caption READ caption WRITE caption STORED true FINAL NOTIFY captionChanged)
   Q_PROPERTY(bool swapRedBlue READ swapRedBlue WRITE setSwapRedBlue STORED true FINAL NOTIFY swapRedBlueChanged )
@@ -46,7 +46,7 @@ public slots:
   QVARIANT_PAYLOAD(MatEvent)
   QVARIANT_PAYLOAD(cv::Mat)
   QVARIANT_PAYLOAD(QImage)
-  void src(const QVariant& variant);
+  void in(const QVariant& variant);
 
   void setSwapRedBlue(bool swapRedBlue) {
     _swapRedBlue = swapRedBlue;

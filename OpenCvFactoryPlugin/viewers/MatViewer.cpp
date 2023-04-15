@@ -70,7 +70,7 @@ MatViewer::MatViewer(QObject *parent)
   setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding);
 }
 
-void MatViewer::src(const QVariant &variant) {
+void MatViewer::in(const QVariant &variant) {
 
   if (variant.userType() == MatEvent::userType()) {
 

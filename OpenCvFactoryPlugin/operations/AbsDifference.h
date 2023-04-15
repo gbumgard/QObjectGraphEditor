@@ -15,6 +15,8 @@ class AbsDifference : public AbstractOpenCvObject
 
   Q_CLASSINFO("class-alias","Absolute Difference")
   Q_CLASSINFO("directory","OpenCV/Core/Operations On Arrays")
+  Q_CLASSINFO("slots","in1(QVariant),in2(QVariant)")
+  Q_CLASSINFO("signals","out(QVariant)")
 
 public:
 
@@ -24,12 +26,12 @@ public:
 
 public slots:
 
-  void src1(const MatEvent& src1Event);
-  void src2(const MatEvent& src2Event);
+  QVARIANT_PAYLOAD(MatEvent) void in1(const QVariant& eventIn);
+  QVARIANT_PAYLOAD(MatEvent) void in2(const QVariant& eventIn);
 
 signals:
 
-  void dst(const MatEvent& dstEvent);
+  QVARIANT_PAYLOAD(MatEvent) void out(const QVariant& eventOut);
 
 protected:
 
@@ -38,7 +40,9 @@ protected:
 private:
 
   MatEvent _src1Event;
+  cv::Mat _mat1;
   MatEvent _src2Event;
+  cv::Mat _mat2;
 
 };
 

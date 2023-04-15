@@ -9,6 +9,8 @@ class DoubleSpinBoxControl : public QDoubleSpinBox
 
   Q_CLASSINFO("class-alias","Double Spin Box")
   Q_CLASSINFO("directory","Qt/Controls")
+  Q_CLASSINFO("slots","in(double)")
+  Q_CLASSINFO("signals","out(double)")
 
   Q_PROPERTY(QString caption READ caption WRITE setCaption)
 

@@ -14,6 +14,9 @@ class AccumulateChanges : public AbstractOpenCvObject
 
     Q_CLASSINFO("class-alias","AccumulateChanges")
     Q_CLASSINFO("directory","OpenCV/Image Processing")
+    Q_CLASSINFO("slots","in(QVariant)")
+    Q_CLASSINFO("signals","out(QVariant),diff(QVariant),mask(QVariant)")
+
 
     Q_PROPERTY(int noiseThreshold READ noiseThreshold WRITE setNoiseThreshold NOTIFY noiseThresholdChanged)
     Q_PROPERTY(int areaThreshold READ areaThreshold WRITE setAreaThreshold NOTIFY areaThresholdChanged)
@@ -62,6 +65,7 @@ private:
     int _keyFrameInterval;
     int _framesUntilNextUpdate;
 
+    cv::Mat _output;
     cv::Mat _accumulator;
 };
 

@@ -11,6 +11,8 @@ class ImageViewer : public QWidget
 
   Q_CLASSINFO("class-alias","Image Viewer")
   Q_CLASSINFO("directory","Qt/Viewers")
+  Q_CLASSINFO("slots","in(QImage)")
+  Q_CLASSINFO("signals","")
 
   Q_PROPERTY(QString caption READ caption WRITE setCaption)
 
