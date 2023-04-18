@@ -12,7 +12,7 @@ FindContours::FindContours(QObject* parent)
   , _offset(0,0)
   , _firstContour(0)
   , _lastContour(255)
-  , _stepSize(1)
+  , _stepSize(16)
 {
   qRegisterMetaType<Contours>();
 }

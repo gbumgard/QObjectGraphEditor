@@ -110,6 +110,8 @@ class OBJECTMODELSHARED_EXPORT ObjectModel
     QSet<QUuid> connectionUuids(const QUuid& objectUuid, const QString &methodSignature) const;
 
 
+    std::list<QUuid> topologicalSort() const;
+
 
     /**********************************************
      * Convenience functions for setting predefined
@@ -194,6 +196,7 @@ class OBJECTMODELSHARED_EXPORT ObjectModel
 
     static void updateObjectStatus(QObject* obj);
 
+    void topologicalSort(const QUuid& objectUuid, std::list<QUuid>& stack, QMap<QUuid,bool>& visited) const;
 
   private:
 

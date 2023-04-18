@@ -9,12 +9,12 @@ InRangeFilter::InRangeFilter(QObject* parent)
   : AbstractOpenCvObject(parent)
   , _minimum(std::numeric_limits<double>::lowest())
   , _maximum(std::numeric_limits<double>::max())
-  , _low(std::numeric_limits<double>::lowest())
-  , _high(std::numeric_limits<double>::max())
+  //, _low(std::numeric_limits<double>::lowest())
+  //, _high(std::numeric_limits<double>::max())
 {
 }
 
-void InRangeFilter::src(const QVariant &variant) {
+void InRangeFilter::in(const QVariant &variant) {
   if (variant.userType() == MatEvent::userType()) {
     ObjectModel::setObjectStatus(this,ObjectModel::STATUS_OK,"OK");
     MatEvent matEvent = qvariant_cast<MatEvent>(variant);
@@ -25,7 +25,7 @@ void InRangeFilter::src(const QVariant &variant) {
     matEvent.mat().copyTo(output,inRangeMask);
     //output.setTo(cv::Scalar(_low),~aboveLowerMask);
     //output.setTo(cv::Scalar(_high),~belowUpperMask);
-    emit dst(QVariant::fromValue(MatEvent(output,matEvent.timestamp())));
+    emit out(QVariant::fromValue(MatEvent(output,matEvent.timestamp())));
   }
   else {
     ObjectModel::setObjectStatus(this,ObjectModel::STATUS_INVALID_SLOT_ARGUMENT_FORMAT,"Unsupported SRC");

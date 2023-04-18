@@ -17,12 +17,14 @@ class DoubleSliderControl : public QSlider
 
   Q_CLASSINFO("class-alias","Double Slider")
   Q_CLASSINFO("directory","Qt/Controls")
+  Q_CLASSINFO("slots","in(double),max(double),min(double)")
+  Q_CLASSINFO("signals","out(double)")
 
   //Q_PROPERTY(double minimum READ minimum WRITE setMinimum NOTIFY minimumChanged)
   //Q_PROPERTY(double maximum READ maximum WRITE setMaximum NOTIFY maximumChanged)
   Q_PROPERTY(double min READ min WRITE min NOTIFY minChanged)
   Q_PROPERTY(double max READ max WRITE max NOTIFY maxChanged)
-  //Q_PROPERTY(double scaleValue READ scaleValue WRITE setScaleValue NOTIFY out)
+  Q_PROPERTY(double scaleValue READ scaleValue WRITE setScaleValue NOTIFY out)
   Q_PROPERTY(QString caption READ caption WRITE caption NOTIFY captionChanged)
 
 public:
@@ -72,16 +74,17 @@ signals:
 
 public slots:
 
+  void in(double value);
+
   void min(double dvalue);
   void max(double dvalue);
 
-  void in(double value);
+  void setScaleValue(double value) { in(value); }
 
-private slots:
+  private slots:
 
   void setMinimum(int value) { QSlider::setMinimum(value); emit minimumChanged(value);}
   void setMaximum(int value) { QSlider::setMaximum(value); emit maximumChanged(value);}
-  void setScaleValue(double value) { in(value); }
 
   void onValueChanged(int);
 

@@ -14,11 +14,11 @@ class InRangeFilter : public AbstractOpenCvObject
 
   Q_CLASSINFO("class-alias","In Range Filter")
   Q_CLASSINFO("directory","OpenCV/Filters")
+  Q_CLASSINFO("slots","in(QVariant)")
+  Q_CLASSINFO("signals","out(QVariant)")
 
   Q_PROPERTY(double minimum READ minimum WRITE minimum NOTIFY minimumChanged)
   Q_PROPERTY(double maximum READ maximum WRITE maximum NOTIFY maximumChanged)
-  Q_PROPERTY(double low READ low WRITE low NOTIFY lowChanged)
-  Q_PROPERTY(double high READ high WRITE high NOTIFY highChanged)
 
 public:
 
@@ -29,12 +29,9 @@ public:
   double minimum() const { return _minimum; }
   double maximum() const { return _maximum; }
 
-  double low() const { return _low; }
-  double high() const { return _high; }
-
 public slots:
 
-  QVARIANT_PAYLOAD(MatEvent) void src(const QVariant& srcEvent);
+  QVARIANT_PAYLOAD(MatEvent) void in(const QVariant& srcEvent);
 
   void minimum(double minimum) {
     _minimum = minimum;
@@ -43,30 +40,17 @@ public slots:
   void maximum(double maximum) {
     _maximum = maximum;
   }
-
-  void low(double low) {
-    _low = low;
-  }
-
-  void high(double high) {
-    _high = high;
-  }
-
 signals:
 
-  QVARIANT_PAYLOAD(MatEvent) void dst(const QVariant& dstEvent);
+  QVARIANT_PAYLOAD(MatEvent) void out(const QVariant& dstEvent);
 
   void minimumChanged(double);
   void maximumChanged(double);
-  void lowChanged(double);
-  void highChanged(double);
 
 private:
 
   double _minimum;
   double _maximum;
-  double _low;
-  double _high;
 
 };
 

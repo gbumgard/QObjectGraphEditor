@@ -6,6 +6,9 @@
 #include "MatEvent.h"
 #include "AbstractOpenCvObject.h"
 #include <opencv2/core.hpp>
+#include <thread>
+#include <future>
+#include <algorithm>
 
 class MedianFilter3D : public AbstractOpenCvObject
 {
@@ -42,34 +45,42 @@ public slots:
 
   void setAperatureSize(AperatureSize aperatureSize);
 
+private slots:
+
+  void start();
+
 signals:
 
   QVARIANT_PAYLOAD(MatEvent) void out(const QVariant& dstEvent);
 
+  void finished();
+
 protected:
 
   template <typename T>
-  void computeMedian(cv::Mat& mat) const {
-    int center = _aperatureSize / 2;
-    std::vector<T> values(_aperatureSize);
-    for (int channel = 0; channel < mat.channels(); channel++) {
-      for (int row = 0; row < mat.rows; row++) {
-        for (int col = 0; col < mat.cols; col++) {
-          for (size_t frame = 0; frame < _aperatureSize; frame++) {
-            values[frame] = _frameBuffer.at(frame).at<T>(row,col);
+  static T computeMedian(std::vector<T> values) {
+      std::nth_element(values.begin(), values.begin() + values.size()/2, values.end());
+      return values[values.size()/2];
+  }
+
+  template <typename T>
+  static void computeMedian(std::vector<cv::Mat> frameBuffer, cv::Mat& output) {
+      for (int row = 0; row < frameBuffer[0].rows; row++) {
+        for (int col = 0; col < frameBuffer[0].cols; col++) {
+          std::vector<T> values;
+          for (auto& frame : frameBuffer) {
+            values.push_back(frame.at<T>(row,col));
           }
-          std::nth_element(values.begin(), values.begin()+center, values.end());
-          mat.at<T>(row,col) = values[center];
+          output.at<T>(row,col) = computeMedian<T>(values);
         }
       }
-    }
   }
 
 private:
 
   AperatureSize _aperatureSize;
   std::vector<cv::Mat> _frameBuffer;
-
+  std::future<void> _taskFuture;
 };
 
 #endif // MedianFilter3D_H

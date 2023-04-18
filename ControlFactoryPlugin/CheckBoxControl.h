@@ -10,6 +10,8 @@ class CheckBoxControl : public QCheckBox
 
   Q_CLASSINFO("class-alias","Check Box")
   Q_CLASSINFO("directory","Qt/Controls")
+  Q_CLASSINFO("slots","in(bool)")
+  Q_CLASSINFO("signals","out(bool)")
 
 public:
 

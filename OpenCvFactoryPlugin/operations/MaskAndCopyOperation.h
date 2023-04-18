@@ -28,7 +28,6 @@ public slots:
 signals:
 
   QVARIANT_PAYLOAD(MatEvent) void out(const QVariant& srcEvent);
-  QVARIANT_PAYLOAD(MatEvent) void maskUsed(const QVariant& srcEvent);
 
 protected:
 
