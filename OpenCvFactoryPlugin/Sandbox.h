@@ -14,7 +14,7 @@ class Sandbox : public AbstractOpenCvObject
 
     Q_OBJECT
 
-    Q_CLASSINFO("class-alias","Sandbox Filter")
+    Q_CLASSINFO("class-alias","Old Sandbox Filter")
     Q_CLASSINFO("directory","OpenCV/Filters")
     Q_CLASSINFO("slots","in(QVariant)")
     //Q_CLASSINFO("signals","out(QVariant),norm(QVariant),mask(QVariant),fgnd(QVariant),bgnd(QVariant),mean(QVariant),var(QVariant),diff(QVariant)")

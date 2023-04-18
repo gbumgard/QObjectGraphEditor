@@ -90,11 +90,13 @@ SOURCES += \
   filters/MedianBlurFilter.cpp \
   filters/MedianFilter3D.cpp \
   filters/RunningStatistics.cpp \
+  filters/SandboxFilter.cpp \
   filters/TemporalMedianFilter.cpp \
   filters/TemporalMedianFilterGpu.cpp \
   filters/ThresholdFilter.cpp \
   filters/StatFilter.cpp \
   filters/BilateralFilter.cpp \
+  filters/GaussianBlurFilter.cpp \
   imageprocessing/BackgroundSubtractorCNT.cpp \
   imageprocessing/BackgroundSubtractorKNN.cpp \
   imageprocessing/MatCompare.cpp \
@@ -128,11 +130,13 @@ HEADERS += \
   filters/MedianBlurFilter.h \
   filters/MedianFilter3D.h \
   filters/RunningStatistics.h \
+  filters/SandboxFilter.h \
   filters/TemporalMedianFilter.h \
   filters/TemporalMedianFilterGpu.h \
   filters/ThresholdFilter.h \
   filters/StatFilter.h \
   filters/BilateralFilter.h \
+  filters/GaussianBlurFilter.h \
   imageprocessing/AccumulateChanges.h \
   imageprocessing/BackgroundSubtractorCNT.h \
   imageprocessing/BackgroundSubtractorKNN.h \
@@ -177,7 +181,6 @@ HEADERS += \
 #    operations/SetToScalarOperation.cpp \
 #    transformations/ClipAndNormalize.cpp \
 #    transformations/ConvertScaleAbs.cpp \
-#    filters/GaussianBlurFilter.cpp \
 #    converters/MatToQImageConvertor.cpp \
 #    utility/MatInfo.cpp \
 #    utility/ThreadDecoupler.cpp \

@@ -14,6 +14,8 @@ class GaussianBlurFilter : public QObject
 
   Q_CLASSINFO("class-alias","Gaussian Blur")
   Q_CLASSINFO("directory","OpenCV/Filters")
+  Q_CLASSINFO("slots","in(QVariant)")
+  Q_CLASSINFO("signals","out(QVariant)")
 
 public:
 
@@ -31,11 +33,11 @@ public:
 
 private:
 
-  Q_PROPERTY(int KernelSizeX READ kernelSizeX WRITE kernelSizeX)
-  Q_PROPERTY(int KernelSizeY READ kernelSizeY WRITE kernelSizeY)
-  Q_PROPERTY(double SigmaX READ sigmaX WRITE sigmaX)
-  Q_PROPERTY(double SigmaY READ sigmaY WRITE sigmaY)
-  Q_PROPERTY(BorderType BorderType READ borderType WRITE borderType)
+  Q_PROPERTY(int KernelSizeX READ kernelSizeX WRITE kernelSizeX NOTIFY kernelSizeXChanged)
+  Q_PROPERTY(int KernelSizeY READ kernelSizeY WRITE kernelSizeY NOTIFY kernelSizeYChanged)
+  Q_PROPERTY(double SigmaX READ sigmaX WRITE sigmaX NOTIFY sigmaXChanged)
+  Q_PROPERTY(double SigmaY READ sigmaY WRITE sigmaY NOTIFY sigmaYChanged)
+  Q_PROPERTY(BorderType BorderType READ borderType WRITE borderType NOTIFY borderTypeChanged)
 
 public:
 
@@ -61,18 +63,22 @@ public:
   double sigmaY() const { return _sigmaY; }
   void sigmaY(double sigmaY) { _sigmaY = sigmaY; }
 
-
-
   BorderType borderType() const { return _borderType; }
   void borderType(BorderType borderType) { _borderType = borderType; }
 
 public slots:
 
-  void in(const MatEvent& input);
+  QVARIANT_PAYLOAD(MatEvent) void in(const QVariant& dstEvent);
 
 signals:
 
-  void out(const MatEvent& output);
+  QVARIANT_PAYLOAD(MatEvent) void out(const QVariant& dstEvent);
+
+  void kernelSizeXChanged(int);
+  void kernelSizeYChanged(int);
+  void sigmaXChanged(double);
+  void sigmaYChanged(double);
+  void borderTypeChanged(BorderType);
 
 protected:
 
